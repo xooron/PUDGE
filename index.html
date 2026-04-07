@@ -3,244 +3,300 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dota 2: Pudge Wars Pro | Supabase Edition</title>
+    <title>Pudge Wars Pro | Online Edition</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Oswald:wght@700&display=swap" rel="stylesheet">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@500;700&family=Cinzel:wght@700&display=swap');
-        
-        body { background: #050705; color: #eee; font-family: 'Oswald', sans-serif; overflow: hidden; user-select: none; }
-
-        /* Загрузочный экран */
-        #splash {
-            position: fixed; inset: 0;
-            background: url('https://i.ytimg.com/vi/hkGEwslJVPI/maxresdefault.jpg') no-repeat center center;
-            background-size: cover; z-index: 2000;
-            display: flex; flex-direction: column; align-items: center; justify-content: flex-end; padding-bottom: 100px;
-            transition: opacity 1s ease;
+        body {
+            background-color: #050505;
+            color: #fff;
+            font-family: 'Inter', sans-serif;
+            overflow: hidden;
+            background-image: radial-gradient(circle at center, #1a0a0a 0%, #050505 100%);
         }
-        .loader-bar { width: 60%; height: 6px; background: #111; border: 1px solid #333; position: relative; }
-        #loader-progress { width: 0%; height: 100%; background: #a51d2d; box-shadow: 0 0 15px #f87171; transition: width 5s linear; }
+
+        /* Glassmorphism */
+        .glass {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+        }
+
+        .btn-modern {
+            background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+        .btn-modern:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(139, 92, 246, 0.3);
+        }
+
+        /* Splash Screen */
+        #splash {
+            position: fixed; inset: 0; z-index: 5000;
+            background: #000 url('https://i.ytimg.com/vi/hkGEwslJVPI/maxresdefault.jpg') no-repeat center;
+            background-size: cover;
+            display: flex; flex-direction: column; align-items: center; justify-content: flex-end; padding-bottom: 100px;
+        }
+        .loader-w { width: 300px; height: 4px; background: rgba(255,255,255,0.1); border-radius: 10px; overflow: hidden; }
+        #loader-progress { width: 0%; height: 100%; background: #6366f1; box-shadow: 0 0 20px #6366f1; transition: width 5s linear; }
 
         .screen { display: none; height: 100vh; width: 100vw; position: relative; }
-        .active-screen { display: flex; flex-direction: column; }
+        .active-screen { display: flex; flex-direction: column; animation: fadeIn 0.8s ease; }
 
-        /* Шапка боя */
-        .battle-header {
-            background: linear-gradient(180deg, #1a1e1a 0%, #050705 100%);
-            border-bottom: 2px solid #2d352d;
-            height: 70px; display: flex; align-items: center; justify-content: center; gap: 60px;
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Game Elements */
+        canvas { border-radius: 16px; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
+        .ability-btn {
+            width: 70px; height: 70px; border: 2px solid rgba(255,255,255,0.2);
+            border-radius: 16px; background-size: cover; position: relative; cursor: pointer;
         }
-        .score-val { font-family: 'Cinzel', serif; font-size: 3rem; color: #fff; text-shadow: 0 0 15px #ff0000; }
-
-        /* Контейнер игры */
-        #gameContainer { position: relative; width: 1200px; margin: 0 auto; }
-        canvas { background: #0a0c0a; display: block; border: 2px solid #1a201a; cursor: crosshair; }
-
-        /* Всплывающие надписи Попал/Проиграл */
-        .status-popup {
-            position: absolute; pointer-events: none; animation: floatUp 1.2s ease-out forwards;
-            font-size: 4rem; font-weight: 900; font-style: italic; z-index: 100;
-        }
-        @keyframes floatUp {
-            0% { transform: translateY(0) scale(0.5); opacity: 0; }
-            20% { transform: translateY(-30px) scale(1.1); opacity: 1; }
-            100% { transform: translateY(-120px) scale(1); opacity: 0; }
+        .cd-overlay {
+            position: absolute; inset: 0; background: rgba(0,0,0,0.7);
+            border-radius: 14px; display: none; align-items: center; justify-content: center;
+            font-size: 24px; font-weight: 800;
         }
 
-        /* HUD способностей */
-        .hud-panel {
-            position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
-            background: rgba(0,0,0,0.9); padding: 10px 25px; border: 2px solid #333; border-radius: 4px;
-            display: flex; gap: 20px; align-items: center;
+        /* Invite Toast */
+        #invite-toast {
+            position: fixed; top: 20px; right: -400px; z-index: 6000;
+            width: 300px; transition: 0.5s ease;
         }
-        .ability-slot {
-            width: 80px; height: 80px; border: 2px solid #555; position: relative;
-            background-size: cover; cursor: pointer; border-radius: 4px;
-        }
-        .ability-slot.cd { filter: grayscale(1) brightness(0.3); }
-        .ability-slot .cd-num {
-            position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
-            font-size: 2rem; font-weight: bold; background: rgba(0,0,0,0.6); color: white;
-        }
-
-        .pudge-btn { background: linear-gradient(to bottom, #7f1d1d, #450a0a); border: 1px solid #b91c1c; }
+        #invite-toast.active { right: 20px; }
     </style>
 </head>
 <body>
 
-    <!-- ЗАГРУЗКА -->
-    <div id="splash">
-        <div class="loader-bar"><div id="loader-progress"></div></div>
-        <div class="mt-4 text-white uppercase tracking-[10px] font-bold text-xs" id="loader-text">Connecting to DELS Base...</div>
+    <!-- УВЕДОМЛЕНИЕ О ПРИГЛАШЕНИИ -->
+    <div id="invite-toast" class="glass p-5 border-l-4 border-indigo-500">
+        <div class="font-bold text-indigo-400">ВЫЗОВ НА ДУЭЛЬ!</div>
+        <div id="inviter-nick" class="text-sm opacity-70 mb-3">Игрок вызывает вас</div>
+        <div class="flex gap-2">
+            <button onclick="acceptInvite()" class="bg-indigo-600 text-[10px] px-4 py-2 rounded-lg font-bold">ПРИНЯТЬ</button>
+            <button onclick="hideToast()" class="bg-white/10 text-[10px] px-4 py-2 rounded-lg">ОТМЕНА</button>
+        </div>
     </div>
 
-    <!-- ЭКРАН РЕГИСТРАЦИИ -->
-    <div id="authScreen" class="screen items-center justify-center bg-[#050705]">
-        <div class="bg-[#111] p-10 border border-[#333] rounded shadow-2xl w-96 text-center">
-            <h1 class="text-3xl font-bold text-red-700 mb-8 italic uppercase tracking-tighter">Pudge Wars 1x1</h1>
-            <input id="regNick" type="text" placeholder="ИМЯ МАСТЕРА" class="w-full bg-black border border-[#333] p-4 text-white mb-4 outline-none focus:border-red-600 font-bold">
-            <input id="regDesc" type="text" placeholder="ОПИСАНИЕ" class="w-full bg-black border border-[#333] p-4 text-white mb-8 outline-none focus:border-red-600">
-            <button onclick="saveAndEnter()" class="w-full pudge-btn py-4 font-bold uppercase italic hover:brightness-125 transition">В БОЙ</button>
+    <!-- ЗАГРУЗКА -->
+    <div id="splash">
+        <div class="loader-w"><div id="loader-progress"></div></div>
+        <div class="mt-4 text-[10px] uppercase tracking-[5px] opacity-50">Connecting to Pudge Net...</div>
+    </div>
+
+    <!-- АВТОРИЗАЦИЯ -->
+    <div id="authScreen" class="screen items-center justify-center">
+        <div class="glass p-10 w-full max-w-sm text-center">
+            <h1 class="text-4xl font-black mb-8 italic tracking-tighter text-indigo-500">PUDGE WARS</h1>
+            <input id="regNick" type="text" placeholder="НИКНЕЙМ" class="w-full bg-white/5 border border-white/10 p-4 rounded-xl mb-4 outline-none focus:border-indigo-500 transition text-center font-bold">
+            <button onclick="handleLogin()" class="btn-modern w-full py-4 rounded-xl uppercase">Войти в лобби</button>
         </div>
     </div>
 
     <!-- ГЛАВНОЕ МЕНЮ -->
     <div id="menuScreen" class="screen">
-        <header class="p-6 flex justify-between bg-[#0a0a0a] border-b border-zinc-800">
-            <div onclick="toggleProfile()" class="flex items-center gap-4 cursor-pointer">
-                <img src="https://images.genius.com/e05ad2b3029a4feea47ac108100b6eb3.1000x1000x1.png" class="w-16 h-16 rounded border-2 border-red-800">
+        <header class="p-6 flex justify-between items-center backdrop-blur-md border-b border-white/5">
+            <div class="flex items-center gap-4 cursor-pointer" onclick="toggleModal('profileModal')">
+                <img src="https://images.genius.com/e05ad2b3029a4feea47ac108100b6eb3.1000x1000x1.png" class="w-14 h-14 rounded-2xl border-2 border-indigo-500 shadow-lg">
                 <div>
-                    <div id="topNick" class="text-2xl font-bold">Pudge</div>
-                    <div class="text-xs text-red-600 font-bold italic uppercase">Статистика</div>
+                    <div id="topNick" class="font-bold text-xl tracking-tight">Player</div>
+                    <div class="text-[10px] text-indigo-400 uppercase font-black">Online Profile</div>
                 </div>
             </div>
-            <div class="bg-black px-6 py-2 border border-yellow-900 text-yellow-500 font-bold" id="coinCount">1000 💰</div>
+            <div class="bg-white/5 px-6 py-2 rounded-2xl border border-yellow-600/30 text-yellow-500 font-bold">
+                <span id="coinCount">1000</span> 💰
+            </div>
         </header>
-        <main class="flex-grow flex items-center justify-center">
-            <button onclick="initGame()" class="pudge-btn px-20 py-10 text-5xl font-black italic rounded-lg shadow-2xl hover:scale-105 transition">ИГРАТЬ 1х1</button>
-        </header>
+
+        <main class="flex-grow flex flex-col items-center justify-center gap-6">
+            <button onclick="startMode('bot')" class="btn-modern w-80 py-8 rounded-3xl text-2xl shadow-2xl">ИГРА С БОТОМ</button>
+            <button onclick="toggleModal('friendsModal')" class="glass w-80 py-8 rounded-3xl text-2xl font-bold hover:bg-white/10 transition">ИГРАТЬ 1х1</button>
+        </main>
     </div>
 
-    <!-- МОДАЛКА ПРОФИЛЯ -->
-    <div id="profileModal" class="fixed inset-0 bg-black/95 z-[500] hidden items-center justify-center">
-        <div class="bg-[#111] border border-red-900 p-10 w-full max-w-2xl relative">
-            <button onclick="toggleProfile()" class="absolute top-4 right-6 text-4xl text-zinc-600 hover:text-white">&times;</button>
-            <div class="flex gap-8 items-center mb-10">
-                <img src="https://images.genius.com/e05ad2b3029a4feea47ac108100b6eb3.1000x1000x1.png" class="w-32 h-32 border-2 border-red-700">
-                <div>
-                    <h2 id="profNick" class="text-4xl font-bold uppercase">NICK</h2>
-                    <p id="profDesc" class="text-zinc-500 italic">Meat Hook Warrior</p>
-                    <p id="profID" class="text-blue-500 font-mono mt-2 text-xs">ID: 000000</p>
+    <!-- СПИСОК ДРУЗЕЙ -->
+    <div id="friendsModal" class="fixed inset-0 bg-black/90 z-[1000] hidden items-center justify-center p-4">
+        <div class="glass w-full max-w-md p-8 relative">
+            <button onclick="toggleModal('friendsModal')" class="absolute top-6 right-6 text-2xl opacity-50">&times;</button>
+            <h2 class="text-2xl font-black mb-6 uppercase italic text-indigo-400">Ваши друзья</h2>
+            
+            <div id="friendsList" class="space-y-3 mb-8 max-h-60 overflow-y-auto pr-2">
+                <p class="text-center opacity-30 italic py-4">Список друзей пуст</p>
+            </div>
+
+            <div class="pt-6 border-t border-white/5">
+                <p class="text-[10px] font-bold text-zinc-500 uppercase mb-2">Добавить друга по ID</p>
+                <div class="flex gap-2">
+                    <input id="addFriendID" type="text" placeholder="Введите ID" class="flex-grow bg-white/5 p-3 rounded-xl border border-white/10 outline-none focus:border-indigo-500">
+                    <button onclick="addFriend()" class="bg-indigo-600 px-6 rounded-xl font-bold">➕</button>
                 </div>
-                <div class="ml-auto text-center bg-black/50 p-4 border border-zinc-800">
-                    <div id="rankIcon" class="text-5xl mb-1">🏅</div>
-                    <div id="rankName" class="text-[10px] uppercase font-bold">Калибровка</div>
-                    <div id="profMMR" class="text-red-600 font-bold">0 MMR</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ПРОФИЛЬ -->
+    <div id="profileModal" class="fixed inset-0 bg-black/95 z-[1000] hidden items-center justify-center p-4">
+        <div class="glass w-full max-w-lg p-10 relative">
+            <button onclick="toggleModal('profileModal')" class="absolute top-6 right-6 text-2xl opacity-50">&times;</button>
+            <div class="flex gap-8 items-center mb-10">
+                <img src="https://images.genius.com/e05ad2b3029a4feea47ac108100b6eb3.1000x1000x1.png" class="w-32 h-32 rounded-3xl border-2 border-indigo-500 shadow-2xl">
+                <div>
+                    <h2 id="profNick" class="text-4xl font-black tracking-tighter">NICKNAME</h2>
+                    <p id="profID" class="text-indigo-500 font-mono text-sm mt-1 tracking-widest">ID: 000000</p>
                 </div>
             </div>
             <div class="grid grid-cols-2 gap-4">
-                <div class="bg-black p-6 border border-zinc-900 text-center">МАТЧЕЙ: <span id="statMatches" class="text-2xl block text-white">0</span></div>
-                <div class="bg-black p-6 border border-zinc-900 text-center">ХУКОВ: <span id="statHooks" class="text-2xl block text-white">0</span></div>
+                <div class="bg-white/5 p-6 rounded-2xl border border-white/5">
+                    <div class="text-[10px] text-zinc-500 uppercase font-bold">MMR Rating</div>
+                    <div id="profMMR" class="text-3xl font-black text-indigo-400">0</div>
+                </div>
+                <div id="rankPanel" class="bg-white/5 p-6 rounded-2xl border border-white/5 text-center">
+                    <div id="rankIcon" class="text-3xl">🛡️</div>
+                    <div id="rankName" class="text-xs font-bold uppercase mt-1">Калибровка</div>
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- ЭКРАН ИГРЫ -->
+    <!-- ИГРА -->
     <div id="gameScreen" class="screen">
-        <div class="battle-header">
-            <div class="text-right w-80">
-                <div id="hNickP" class="text-blue-400 font-bold text-2xl uppercase italic">PLAYER</div>
-                <div class="text-[10px] text-zinc-500 tracking-widest">RADIANT</div>
+        <div class="flex justify-between bg-black/80 p-6 border-b border-white/5 backdrop-blur-md">
+            <div id="pScore" class="text-5xl font-black text-indigo-500">0</div>
+            <div class="text-center">
+                <div class="text-[10px] font-bold text-zinc-500 uppercase tracking-[10px]">Battle</div>
+                <div class="text-sm font-bold opacity-30 italic">Target: 7 Hits</div>
             </div>
-            <div class="score-val" id="hScore">0 - 0</div>
-            <div class="text-left w-80">
-                <div class="text-red-700 font-bold text-2xl uppercase italic">DIRE BOT</div>
-                <div class="text-[10px] text-zinc-500 tracking-widest">DIRE</div>
-            </div>
+            <div id="eScore" class="text-5xl font-black text-red-600">0</div>
         </div>
-        <div id="gameContainer">
-            <canvas id="gameCanvas" width="1200" height="600"></canvas>
-        </div>
-        <div class="hud-panel">
-            <div id="hookSlot" class="ability-slot" style="background-image: url('https://liquipedia.net/commons/images/9/91/Pudge_Meat_Hook_%28Grand_Abscession%29_abilityicon_dota2_gameasset.png');">
-                <div id="cdFill" class="cd-num hidden">7</div>
-                <div class="absolute -top-1 -left-1 bg-black text-[10px] border border-zinc-600 px-1 font-bold">Q</div>
-            </div>
-            <div class="text-sm text-zinc-400 font-bold leading-tight uppercase">
-                ПКМ: Ходить (Dota Style)<br>Q: Мгновенный Хук (Курсор)<br>Счет до 7
+        
+        <div class="flex-grow flex items-center justify-center relative">
+            <canvas id="gameCanvas" width="1000" height="550"></canvas>
+            
+            <div class="absolute bottom-10 left-1/2 -translate-x-1/2 flex items-center gap-8 glass p-4 px-8">
+                <div id="hookBtn" class="ability-btn" style="background-image: url('https://liquipedia.net/commons/images/9/91/Pudge_Meat_Hook_%28Grand_Abscession%29_abilityicon_dota2_gameasset.png')">
+                    <div id="cdText" class="cd-overlay">7</div>
+                    <div class="absolute -top-2 -left-2 bg-black px-2 border border-white/10 text-[10px] rounded">Q</div>
+                </div>
+                <div class="text-[10px] text-zinc-500 font-bold uppercase leading-tight">
+                    ПКМ: Идти (Dota-Style)<br>Q: Быстрый Хук<br>7 попаданий для победы
+                </div>
+                <button onclick="location.reload()" class="text-red-500 font-bold uppercase text-[10px] hover:underline">Выйти</button>
             </div>
         </div>
     </div>
 
     <script>
         // --- КОНФИГУРАЦИЯ SUPABASE ---
-        // Переименовали переменную в pudgeDb, чтобы не было конфликта с глобальным объектом 'supabase'
         const SUPABASE_URL = 'https://kqlbnybifjoamckgkltv.supabase.co'; 
-        const SUPABASE_KEY = 'sb_publishable_ZTatmjCcOgN5o_EY1-SBUg_7t0bVIem'; // <--- ЗАМЕНИ ЭТО НА СВОЙ ANON KEY
+        const SUPABASE_KEY = 'sb_secret__9cJdxqifMU7Chuwjz1PUw_YYf0o3_H'; // ЗАМЕНИТЬ НА ANON KEY
         const pudgeDb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        let user = { 
-            id: localStorage.getItem('pudge_id') || Math.floor(Math.random()*5000000+1000000).toString(),
-            nick: "Pudge", desc: "Fresh!", coins: 1000, matches: 0, hooks: 0, mmr: 0 
-        };
+        let user = { id: localStorage.getItem('pudge_id') || Math.floor(100000 + Math.random()*899999).toString(), nick: "", mmr: 0, coins: 1000, matches: 0, hooks: 0, friends: [] };
+        let activeInvite = null;
 
         // ЗАГРУЗКА
         window.onload = async () => {
             localStorage.setItem('pudge_id', user.id);
-            const progressBar = document.getElementById('loader-progress');
-            if(progressBar) progressBar.style.width = '100%';
+            document.getElementById('loader-progress').style.width = '100%';
 
-            const finishLoading = () => {
-                const splash = document.getElementById('splash');
-                if (splash) {
-                    splash.style.opacity = '0';
-                    setTimeout(() => {
-                        splash.style.display = 'none';
-                        showScreen('authScreen');
-                    }, 1000);
-                }
-            };
+            // Загрузка данных профиля
+            const { data } = await pudgeDb.from('pudge_profiles').select('*').eq('id', user.id).maybeSingle();
+            if(data) user = {...user, ...data};
 
-            // Пытаемся загрузить данные
-            try {
-                // Используем pudgeDb вместо supabase
-                const { data, error } = await pudgeDb.from('pudge_profiles').select('*').eq('id', user.id).maybeSingle();
-                if(data) {
-                    user = data;
-                    document.getElementById('regNick').value = user.nick;
-                    document.getElementById('regDesc').value = user.description || "";
-                }
-            } catch (e) {
-                console.log("Offline mode active");
-            }
+            // Realtime подписка на приглашения
+            pudgeDb.channel('invites')
+                .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'pudge_invites', filter: `to_id=eq.${user.id}` }, payload => {
+                    if(payload.new.status === 'pending') showInvite(payload.new);
+                }).subscribe();
 
-            // ПРЕДОХРАНИТЕЛЬ: Скрываем загрузку в любом случае через 5 секунд
-            setTimeout(finishLoading, 5000);
+            updateUI();
+            setTimeout(() => {
+                document.getElementById('splash').style.opacity = '0';
+                setTimeout(() => {
+                    document.getElementById('splash').style.display = 'none';
+                    showScreen('authScreen');
+                }, 1000);
+            }, 5000);
         };
 
         function showScreen(id) {
             document.querySelectorAll('.screen').forEach(s => s.classList.remove('active-screen'));
-            const target = document.getElementById(id);
-            if(target) target.classList.add('active-screen');
+            document.getElementById(id).classList.add('active-screen');
         }
 
-        async function saveAndEnter() {
-            const n = document.getElementById('regNick').value;
-            if(!n) return alert("Никнейм!");
-            user.nick = n;
-            user.description = document.getElementById('regDesc').value || "Pudge Wars Legend";
-            
+        async function handleLogin() {
+            const nick = document.getElementById('regNick').value;
+            if(!nick) return alert("Введите ник!");
+            user.nick = nick;
+            await pudgeDb.from('pudge_profiles').upsert(user);
             updateUI();
             showScreen('menuScreen');
-
-            // Сохраняем в Supabase фоном через pudgeDb
-            try {
-                await pudgeDb.from('pudge_profiles').upsert({
-                    id: user.id, nick: user.nick, description: user.description,
-                    mmr: user.mmr, coins: user.coins, matches: user.matches, hooks: user.hooks
-                });
-            } catch(e) {}
         }
 
-        function toggleProfile() {
-            const m = document.getElementById('profileModal');
-            const h = m.classList.contains('hidden');
-            m.classList.toggle('hidden', !h);
-            m.classList.toggle('flex', h);
-            if(h) updateUI();
+        function toggleModal(id) {
+            const m = document.getElementById(id);
+            m.classList.toggle('hidden');
+            m.classList.toggle('flex');
+            if(id === 'friendsModal') renderFriends();
         }
 
         function updateUI() {
-            document.getElementById('topNick').innerText = user.nick;
-            document.getElementById('profNick').innerText = user.nick;
-            document.getElementById('hNickP').innerText = user.nick;
-            document.getElementById('profDesc').innerText = user.description || user.desc;
+            document.getElementById('topNick').innerText = user.nick || "Pudge";
+            document.getElementById('profNick').innerText = user.nick || "Pudge";
             document.getElementById('profID').innerText = "ID: " + user.id;
-            document.getElementById('statMatches').innerText = user.matches;
-            document.getElementById('statHooks').innerText = user.hooks;
-            document.getElementById('profMMR').innerText = user.matches < 10 ? (10-user.matches)+" до ранга" : user.mmr + " MMR";
-            document.getElementById('coinCount').innerText = user.coins + " 💰";
+            document.getElementById('profMMR').innerText = user.mmr;
+            document.getElementById('coinCount').innerText = user.coins;
+        }
+
+        // --- ДРУЗЬЯ ---
+        async function addFriend() {
+            const fid = document.getElementById('addFriendID').value;
+            if(!fid || fid === user.id) return;
+            await pudgeDb.from('pudge_friends').insert([{ user_id: user.id, friend_id: fid }]);
+            alert("Друг добавлен!");
+            renderFriends();
+        }
+
+        async function renderFriends() {
+            const { data } = await pudgeDb.from('pudge_friends').select('friend_id').eq('user_id', user.id);
+            const list = document.getElementById('friendsList');
+            if(!data || data.length === 0) {
+                list.innerHTML = `<p class="text-center opacity-30 italic py-4">Список друзей пуст</p>`;
+                return;
+            }
+            list.innerHTML = "";
+            for(let f of data) {
+                const { data: profile } = await pudgeDb.from('pudge_profiles').select('nick').eq('id', f.friend_id).single();
+                const div = document.createElement('div');
+                div.className = "flex justify-between items-center bg-white/5 p-4 rounded-2xl border border-white/5";
+                div.innerHTML = `
+                    <span class="font-bold">${profile.nick} <small class="opacity-30">#${f.friend_id}</small></span>
+                    <button onclick="sendDuel('${f.friend_id}')" class="bg-indigo-600 px-4 py-1 rounded-lg text-[10px] font-bold uppercase">Вызвать</button>
+                `;
+                list.innerHTML += div.outerHTML;
+            }
+        }
+
+        async function sendDuel(to_id) {
+            await pudgeDb.from('pudge_invites').insert([{ from_id: user.id, to_id: to_id }]);
+            alert("Вызов отправлен!");
+        }
+
+        function showInvite(invite) {
+            activeInvite = invite;
+            document.getElementById('inviter-nick').innerText = "Игрок #" + invite.from_id + " вызывает на бой!";
+            document.getElementById('invite-toast').classList.add('active');
+        }
+
+        function hideToast() { document.getElementById('invite-toast').classList.remove('active'); }
+
+        function acceptInvite() {
+            hideToast();
+            startMode('bot'); // Запуск матча (симуляция)
         }
 
         // --- ИГРОВОЙ ДВИЖОК ---
@@ -248,190 +304,95 @@
         const ctx = canvas.getContext('2d');
         const pImg = new Image(); pImg.src = "https://images.genius.com/e05ad2b3029a4feea47ac108100b6eb3.1000x1000x1.png";
 
-        let gameActive = false, pCD = false, bCD = false;
-        let player, enemy, hook = { active: false, x:0, y:0, vx:0, vy:0, owner:null };
-        let score = { p:0, e:0 };
-        let mouseX = 0, mouseY = 0;
+        let gameActive = false, pCD = false;
+        let player, enemy, hook = { active: false };
+        let score = { p: 0, e: 0 };
+        let mx = 0, my = 0;
 
-        function initGame() {
+        function startMode(mode) {
             showScreen('gameScreen');
-            player = { x: 100, y: 300, tx: 100, ty: 300, alive: true, respawn: 0 };
-            enemy = { x: 1100, y: 300, tx: 1100, ty: 300, alive: true, respawn: 0 };
-            score = { p:0, e:0 };
+            player = { x: 100, y: 275, tx: 100, ty: 275 };
+            enemy = { x: 900, y: 275, tx: 900, ty: 275 };
+            score = { p: 0, e: 0 };
             gameActive = true;
-            updateScoreUI();
             requestAnimationFrame(gameLoop);
         }
 
-        function updateScoreUI() {
-            document.getElementById('hScore').innerText = `${score.p} - ${score.e}`;
-        }
-
-        function showPopup(text, color, isEnemy) {
-            const div = document.createElement('div');
-            div.className = 'status-popup';
-            div.innerText = text;
-            div.style.color = color;
-            div.style.left = isEnemy ? (enemy.x - 80) + 'px' : (player.x - 80) + 'px';
-            div.style.top = (isEnemy ? enemy.y : player.y) - 60 + 'px';
-            document.getElementById('gameContainer').appendChild(div);
-            setTimeout(() => div.remove(), 1200);
-        }
-
-        canvas.addEventListener('contextmenu', (e) => {
+        canvas.oncontextmenu = e => {
             e.preventDefault();
             const r = canvas.getBoundingClientRect();
-            if(player.alive) {
-                player.tx = e.clientX - r.left;
-                player.ty = e.clientY - r.top;
-                if(player.tx > 550) player.tx = 550;
-            }
-        });
+            player.tx = e.clientX - r.left; player.ty = e.clientY - r.top;
+            if(player.tx > 480) player.tx = 480;
+        };
 
-        canvas.addEventListener('mousemove', (e) => {
+        canvas.onmousemove = e => {
             const r = canvas.getBoundingClientRect();
-            mouseX = e.clientX - r.left;
-            mouseY = e.clientY - r.top;
-        });
-
-        window.onkeydown = (e) => {
-            if(e.code === 'KeyQ') {
-                if(!pCD && !hook.active && player.alive) fireHook(player, mouseX, mouseY);
-            }
-            if(e.code === 'Escape') { gameActive = false; showScreen('menuScreen'); }
+            mx = e.clientX - r.left; my = e.clientY - r.top;
         };
 
-        document.getElementById('hookSlot').onclick = () => {
-            if(!pCD && !hook.active && player.alive) fireHook(player, mouseX, mouseY);
-        };
+        window.onkeydown = e => { if(e.code === 'KeyQ' && !pCD && !hook.active) fireHook(); };
+        document.getElementById('hookBtn').onclick = () => { if(!pCD) fireHook(); };
 
-        function fireHook(owner, tx, ty) {
-            if(hook.active) return;
-            hook.active = true;
-            hook.owner = owner;
-            hook.x = owner.x; hook.y = owner.y;
-            hook.sx = owner.x; hook.sy = owner.y;
-            const ang = Math.atan2(ty - owner.y, tx - owner.x);
-            hook.vx = Math.cos(ang) * 13;
-            hook.vy = Math.sin(ang) * 13;
-            
-            if(owner === player) {
-                user.hooks++;
-                startCooldown('player');
-            } else {
-                startCooldown('bot');
-            }
-        }
-
-        function startCooldown(who) {
-            if(who === 'player') {
-                pCD = true;
-                const fill = document.getElementById('cdFill');
-                fill.classList.remove('hidden');
-                let t = 7; fill.innerText = t;
-                const i = setInterval(() => {
-                    t--; fill.innerText = t;
-                    if(t <= 0) { clearInterval(i); pCD = false; fill.classList.add('hidden'); }
-                }, 1000);
-            } else {
-                bCD = true;
-                setTimeout(() => bCD = false, 7000);
-            }
+        function fireHook() {
+            hook = { active: true, x: player.x, y: player.y, sx: player.x, sy: player.y, owner: player };
+            const ang = Math.atan2(my - player.y, mx - player.x);
+            hook.vx = Math.cos(ang) * 13; hook.vy = Math.sin(ang) * 13;
+            pCD = true;
+            const cd = document.getElementById('cdText'); cd.style.display = 'flex';
+            let t = 7; cd.innerText = t;
+            const i = setInterval(() => {
+                t--; cd.innerText = t;
+                if(t <= 0) { clearInterval(i); pCD = false; cd.style.display = 'none'; }
+            }, 1000);
         }
 
         function gameLoop() {
             if(!gameActive) return;
-
-            ctx.fillStyle = "#121a12"; ctx.fillRect(0,0,1200,600);
-            let grad = ctx.createLinearGradient(550, 0, 650, 0);
-            grad.addColorStop(0, "#050505"); grad.addColorStop(0.5, "#0a1212"); grad.addColorStop(1, "#050505");
-            ctx.fillStyle = grad; ctx.fillRect(560, 0, 80, 600);
+            ctx.fillStyle = "#0a0a0a"; ctx.fillRect(0,0,1000,550);
+            ctx.fillStyle = "#050505"; ctx.fillRect(485, 0, 30, 550); // River
 
             [player, enemy].forEach(u => {
-                if(!u.alive) {
-                    if(Date.now() > u.respawn) {
-                        u.alive = true; u.x = (u === player) ? 100 : 1100; u.tx = u.x; u.ty = 300; u.y = 300;
-                    }
-                    return;
-                }
                 let dx = u.tx - u.x, dy = u.ty - u.y;
-                let d = Math.sqrt(dx*dx + dy*dy);
-                if(d > 5) { u.x += (dx/d) * 4.4; u.y += (dy/d) * 4.4; }
-                u.x = Math.max(45, Math.min(u === player ? 540 : 1200, u.x));
-                if(u === enemy && u.x < 660) u.x = 660;
-                u.y = Math.max(45, Math.min(555, u.y));
+                let d = Math.sqrt(dx*dx+dy*dy);
+                if(d > 5) { u.x += (dx/d)*4.5; u.y += (dy/d)*4.5; }
+                u.x = Math.max(40, Math.min(u === player ? 480 : 1000, u.x));
+                if(u === enemy && u.x < 520) u.x = 520;
             });
 
-            if(enemy.alive) {
-                if(Math.random() < 0.04) { enemy.tx = 700 + Math.random() * 450; enemy.ty = 50 + Math.random() * 500; }
-                if(!bCD && !hook.active && Math.random() < 0.01) fireHook(enemy, player.x, player.y);
-            }
+            if(Math.random() < 0.02) { enemy.tx = 600+Math.random()*350; enemy.ty = Math.random()*500; }
 
-            [player, enemy].forEach(p => {
-                if(!p.alive) return;
-                ctx.save();
-                ctx.fillStyle = "rgba(0,0,0,0.4)";
-                ctx.beginPath(); ctx.ellipse(p.x, p.y + 35, 30, 10, 0, 0, Math.PI*2); ctx.fill();
-                ctx.drawImage(pImg, p.x-45, p.y-45, 90, 90);
-                ctx.restore();
-            });
+            ctx.drawImage(pImg, player.x-40, player.y-40, 80, 80);
+            ctx.drawImage(pImg, enemy.x-40, enemy.y-40, 80, 80);
 
             if(hook.active) {
-                renderDragonclaw();
+                renderChain();
                 hook.x += hook.vx; hook.y += hook.vy;
-                let target = (hook.owner === player) ? enemy : player;
-                let dist = Math.sqrt((hook.x - target.x)**2 + (hook.y - target.y)**2);
-                let range = Math.sqrt((hook.x - hook.sx)**2 + (hook.y - hook.sy)**2);
-                if(dist < 45 && target.alive) { hit(target); hook.active = false; }
-                if(range > 950 || hook.x < -50 || hook.x > 1250) hook.active = false;
-            }
-
-            if(score.p >= 7 || score.e >= 7) finish();
-            else requestAnimationFrame(gameLoop);
-        }
-
-        function renderDragonclaw() {
-            let dist = Math.sqrt((hook.x - hook.owner.x)**2 + (hook.y - hook.owner.y)**2);
-            let segments = Math.floor(dist / 22);
-            let ang = Math.atan2(hook.y - hook.owner.y, hook.x - hook.owner.x);
-            for(let i=0; i<=segments; i++) {
-                let sx = hook.owner.x + Math.cos(ang) * (i * 22);
-                let sy = hook.owner.y + Math.sin(ang) * (i * 22);
-                ctx.save();
-                ctx.translate(sx, sy); ctx.rotate(ang);
-                if(i === segments) {
-                    ctx.fillStyle = "#f1f5f9"; ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(-35, -20); ctx.lineTo(-20, 0); ctx.lineTo(-35, 20); ctx.closePath(); ctx.fill();
-                } else {
-                    ctx.fillStyle = "#cbd5e1"; ctx.fillRect(-11, -6, 22, 12);
+                let target = enemy;
+                let dist = Math.sqrt((hook.x-target.x)**2+(hook.y-target.y)**2);
+                if(dist < 40) {
+                    score.p++; document.getElementById('pScore').innerText = score.p;
+                    hook.active = false;
+                    if(score.p >= 7) { alert("ПОБЕДА!"); finishMatch(true); }
                 }
-                ctx.restore();
+                let range = Math.sqrt((hook.x-hook.sx)**2+(hook.y-hook.sy)**2);
+                if(range > 900) hook.active = false;
             }
+            requestAnimationFrame(gameLoop);
         }
 
-        function hit(target) {
-            target.alive = false; target.respawn = Date.now() + 3000;
-            if(target === enemy) { score.p++; showPopup("ПОПАЛ!", "#4ade80", true); }
-            else { score.e++; showPopup("ПРОИГРАЛ!", "#f87171", false); }
-            updateScoreUI();
+        function renderChain() {
+            ctx.strokeStyle = "#555"; ctx.lineWidth = 4;
+            ctx.beginPath(); ctx.moveTo(hook.owner.x, hook.owner.y);
+            ctx.lineTo(hook.x, hook.y); ctx.stroke();
+            ctx.fillStyle = "#f1f5f9"; ctx.fillRect(hook.x-10, hook.y-10, 20, 20);
         }
 
-        async function finish() {
+        async function finishMatch(win) {
             gameActive = false;
             user.matches++;
-            if(score.p >= 7) { user.mmr += 40; user.coins += 200; alert("ПОБЕДА!"); }
-            else { user.mmr -= 60; alert("ПОРАЖЕНИЕ..."); }
-            if(user.mmr < 0) user.mmr = 0;
-            
-            try {
-                // Используем pudgeDb для сохранения
-                await pudgeDb.from('pudge_profiles').upsert({
-                    id: user.id, nick: user.nick, mmr: user.mmr,
-                    coins: user.coins, matches: user.matches, hooks: user.hooks
-                });
-            } catch(e) {}
-
-            updateUI();
-            showScreen('menuScreen');
+            if(win) { user.mmr += 40; user.coins += 200; }
+            await pudgeDb.from('pudge_profiles').upsert(user);
+            updateUI(); showScreen('menuScreen');
         }
     </script>
 </body>

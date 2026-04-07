@@ -44,8 +44,10 @@
             display: flex; flex-direction: column; align-items: center; justify-content: center;
         }
 
-        /* Стили Shards (Dota Plus) */
         .shard-val { color: #f1d37e; text-shadow: 0 0 10px rgba(241, 211, 126, 0.5); font-family: 'Oswald', sans-serif; }
+        
+        /* Профиль */
+        .stat-card { background: rgba(255,255,255,0.05); padding: 10px; border-radius: 12px; text-align: center; border: 1px solid rgba(255,255,255,0.1); }
     </style>
 </head>
 <body>
@@ -67,7 +69,6 @@
             <div class="glass p-12 rounded-[40px] w-[450px] shadow-2xl border-t-2 border-red-600">
                 <h1 id="authTitle" class="text-4xl font-black mb-10 italic tracking-tighter text-center">PUDGE 1x1</h1>
                 
-                <!-- ВХОД -->
                 <div id="loginForm" class="space-y-4">
                     <input id="logUser" type="text" placeholder="ЛОГИН" class="w-full bg-black/40 border border-white/10 p-4 rounded-2xl outline-none focus:border-red-600 transition">
                     <input id="logPass" type="password" placeholder="ПАРОЛЬ" class="w-full bg-black/40 border border-white/10 p-4 rounded-2xl outline-none focus:border-red-600 transition">
@@ -75,7 +76,6 @@
                     <p class="text-center text-xs opacity-50">Нет аккаунта? <span onclick="toggleAuth(true)" class="text-red-500 cursor-pointer underline">Создать</span></p>
                 </div>
 
-                <!-- РЕГИСТРАЦИЯ -->
                 <div id="regForm" class="space-y-4 hidden">
                     <input id="regUser" type="text" placeholder="ЛОГИН" class="w-full bg-black/40 border border-white/10 p-4 rounded-2xl outline-none focus:border-green-600 transition">
                     <input id="regPass" type="password" placeholder="ПАРОЛЬ" class="w-full bg-black/40 border border-white/10 p-4 rounded-2xl outline-none focus:border-green-600 transition">
@@ -89,13 +89,12 @@
 
     <!-- ГЛАВНОЕ МЕНЮ -->
     <div id="menuScreen" class="screen">
-        <!-- Левая панель: Профиль и Друзья -->
         <div class="absolute top-10 left-10 bottom-10 flex flex-col gap-6">
-            <!-- Профиль -->
-            <div onclick="toggleModal('profileModal')" class="glass p-4 rounded-3xl flex items-center gap-4 cursor-pointer hover:bg-white/5 transition">
+            <!-- Кнопка моего профиля -->
+            <div onclick="openProfile(user)" class="glass p-4 rounded-3xl flex items-center gap-4 cursor-pointer hover:bg-white/5 transition border-l-4 border-red-600">
                 <div class="relative">
                     <img src="https://images.genius.com/e05ad2b3029a4feea47ac108100b6eb3.1000x1000x1.png" class="w-16 h-16 rounded-2xl border-2 border-red-600 shadow-lg">
-                    <div id="rankIconMain" class="absolute -bottom-2 -right-2 bg-black border border-white/20 w-8 h-8 rounded-lg flex items-center justify-center text-xs">🔒</div>
+                    <div id="rankIconMain" class="absolute -bottom-2 -right-2 bg-black border border-white/20 w-8 h-8 rounded-lg flex items-center justify-center text-xs text-yellow-500">🏆</div>
                 </div>
                 <div>
                     <div id="userNickMain" class="text-2xl font-black tracking-tight">Pudge</div>
@@ -109,9 +108,15 @@
                     <span class="text-[10px] font-black opacity-40 uppercase tracking-widest">Друзья</span>
                     <button onclick="addFriendPrompt()" class="text-green-500 font-bold hover:scale-125 transition">+</button>
                 </div>
-                <div id="friendsList" class="flex-grow overflow-y-auto space-y-2 mb-4 pr-2"></div>
+                <div id="friendsList" class="flex-grow overflow-y-auto space-y-2 mb-4 pr-2">
+                    <!-- Заглушка друга -->
+                    <div onclick="openProfile({nick:'Dendi', mmr:8500, matches:150, hooks:1200, id:'777888'})" class="flex items-center gap-3 p-2 hover:bg-white/5 rounded-xl cursor-pointer transition">
+                        <div class="w-10 h-10 rounded-lg bg-zinc-800 border border-white/10 flex items-center justify-center">D</div>
+                        <div class="text-sm font-bold">Dendi</div>
+                        <div class="ml-auto text-[10px] text-yellow-500 font-bold">8500 MMR</div>
+                    </div>
+                </div>
                 
-                <!-- Заявки -->
                 <div class="border-t border-white/10 pt-4">
                     <span class="text-[10px] font-black opacity-40 uppercase tracking-widest">Заявки</span>
                     <div id="requestsList" class="mt-2 space-y-2 max-h-32 overflow-y-auto">
@@ -121,9 +126,8 @@
             </div>
         </div>
 
-        <!-- Верхняя правая панель -->
         <div class="absolute top-10 right-10 flex items-center gap-6">
-            <div onclick="toggleModal('shopModal')" class="glass-dark px-6 py-2 rounded-xl flex items-center gap-3 cursor-pointer hover:bg-black/80 transition border border-white/10">
+            <div class="glass-dark px-6 py-2 rounded-xl flex items-center gap-3 border border-white/10">
                 <div class="w-5 h-7 bg-gradient-to-br from-orange-400 to-orange-800" style="clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);"></div>
                 <div>
                     <div class="shard-val text-2xl leading-none" id="coinsMain">18,068</div>
@@ -133,9 +137,45 @@
             <button onclick="toggleModal('exitModal')" class="w-12 h-12 rounded-full bg-red-600/20 border border-red-600/50 flex items-center justify-center hover:bg-red-600 transition">✕</button>
         </div>
 
-        <!-- Кнопка ИГРАТЬ -->
         <div class="fixed bottom-10 right-10">
             <button onclick="toggleModal('playModal')" class="btn-play-fixed px-20 py-6 rounded-xl text-4xl font-black italic tracking-tighter uppercase">Играть</button>
+        </div>
+    </div>
+
+    <!-- МОДАЛЬНОЕ ОКНО ПРОФИЛЯ -->
+    <div id="profileModal" class="fixed inset-0 bg-black/90 z-[2000] hidden items-center justify-center p-4">
+        <div class="glass w-full max-w-md rounded-[40px] overflow-hidden border-t-4 border-red-600 relative">
+            <button onclick="toggleModal('profileModal')" class="absolute top-6 right-6 text-white/40 hover:text-white">✕</button>
+            
+            <div class="p-8">
+                <!-- Шапка профиля -->
+                <div class="flex items-center gap-6 mb-8">
+                    <img id="profAvatar" src="https://images.genius.com/e05ad2b3029a4feea47ac108100b6eb3.1000x1000x1.png" class="w-24 h-24 rounded-3xl border-4 border-red-600 shadow-2xl">
+                    <div>
+                        <h2 id="profNick" class="text-3xl font-black italic uppercase tracking-tighter text-white">Pudge</h2>
+                        <p id="profId" class="text-xs text-white/30 font-mono">ID: 123456</p>
+                        <div class="mt-2 bg-red-600/20 text-red-500 px-3 py-1 rounded-full text-[10px] font-bold inline-block border border-red-600/30">PRO PLAYER</div>
+                    </div>
+                </div>
+
+                <!-- Статистика -->
+                <div class="grid grid-cols-2 gap-4 mb-8">
+                    <div class="stat-card">
+                        <p class="text-[10px] uppercase opacity-40 font-bold">MMR</p>
+                        <p id="profMMR" class="text-2xl font-black text-yellow-500">2500</p>
+                    </div>
+                    <div class="stat-card">
+                        <p class="text-[10px] uppercase opacity-40 font-bold">Матчи</p>
+                        <p id="profMatches" class="text-2xl font-black">42</p>
+                    </div>
+                    <div class="stat-card col-span-2 border-red-600/20">
+                        <p class="text-[10px] uppercase opacity-40 font-bold">Всего попаданий хуком</p>
+                        <p id="profHooks" class="text-2xl font-black text-red-500">1,240</p>
+                    </div>
+                </div>
+
+                <button onclick="toggleModal('profileModal')" class="w-full bg-white/5 py-4 rounded-2xl font-bold hover:bg-white/10 transition uppercase text-sm tracking-widest">Закрыть</button>
+            </div>
         </div>
     </div>
 
@@ -152,19 +192,17 @@
         <div class="fixed bottom-10 left-1/2 -translate-x-1/2 glass p-4 flex gap-6 items-center rounded-2xl">
             <div id="hookBtn" class="w-20 h-20 border-2 border-white/20 rounded-xl relative overflow-hidden" style="background-image: url('https://liquipedia.net/commons/images/9/91/Pudge_Meat_Hook_%28Grand_Abscession%29_abilityicon_dota2_gameasset.png'); background-size: cover;">
                 <div id="cdFill" class="absolute inset-0 bg-black/80 hidden items-center justify-center text-3xl font-bold">7</div>
-                <div class="absolute -top-1 -left-1 bg-black px-2 text-[10px] border border-white/10 font-bold">Q</div>
             </div>
-            <div class="text-[10px] opacity-40 font-bold uppercase">ПКМ: Ходить<br>Q: Хук</div>
+            <div class="text-[10px] opacity-40 font-bold uppercase">ПКМ: Ходить | Q: Хук</div>
             <button onclick="exitGame()" class="text-red-500 font-black text-xs underline">ПОКИНУТЬ</button>
         </div>
     </div>
 
-    <!-- МОДАЛКИ -->
+    <!-- МОДАЛКИ ВЫХОДА И ПОИСКА -->
     <div id="playModal" class="fixed inset-0 bg-black/90 z-[1000] hidden items-center justify-center">
         <div class="glass p-10 rounded-[40px] flex flex-col gap-4 w-96 text-center">
             <h2 class="font-black text-2xl mb-4 tracking-widest uppercase italic">Найти игру</h2>
             <button onclick="initMatch()" class="bg-white/5 border border-white/10 py-6 rounded-2xl font-bold hover:bg-white/10 transition flex justify-between px-8">ПРОТИВ БОТА <span>🤖</span></button>
-            <button onclick="alert('Выберите друга в списке')" class="bg-indigo-600 py-6 rounded-2xl font-bold hover:brightness-110 transition flex justify-between px-8">1х1 С ДРУГОМ <span>⚔️</span></button>
             <button onclick="toggleModal('playModal')" class="mt-4 text-xs opacity-40 uppercase font-bold">Назад</button>
         </div>
     </div>
@@ -180,12 +218,11 @@
     </div>
 
     <script>
-        // ИНИЦИАЛИЗАЦИЯ SUPABASE
         const SUPABASE_URL = 'https://kqlbnybifjoamckgkltv.supabase.co'; 
         const SUPABASE_KEY = 'sb_publishable_ZTatmjCcOgN5o_EY1-SBUg_7t0bVIem'; 
         const pudgeDb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        let user = { id: "", nick: "", mmr: 0, coins: 18068, matches: 0, hooks: 0 };
+        let user = { id: "000000", nick: "Pudge", mmr: 0, coins: 18068, matches: 0, hooks: 0 };
 
         window.onload = () => {
             document.getElementById('loader-progress').style.width = '100%';
@@ -206,16 +243,34 @@
         function toggleAuth(isReg) {
             document.getElementById('loginForm').classList.toggle('hidden', isReg);
             document.getElementById('regForm').classList.toggle('hidden', !isReg);
-            document.getElementById('authTitle').innerText = isReg ? "РЕГИСТРАЦИЯ" : "PUDGE 1x1";
         }
 
         function toggleModal(id) {
             const m = document.getElementById(id);
-            m.classList.toggle('hidden');
-            m.classList.toggle('flex');
+            if (m.classList.contains('hidden')) {
+                m.classList.remove('hidden');
+                m.classList.add('flex');
+            } else {
+                m.classList.add('hidden');
+                m.classList.remove('flex');
+            }
         }
 
-        // --- АВТОРИЗАЦИЯ ---
+        // ОТКРЫТИЕ ПРОФИЛЯ (Своего или чужого)
+        function openProfile(userData) {
+            document.getElementById('profNick').innerText = userData.nick;
+            document.getElementById('profId').innerText = `ID: ${userData.id || 'Unknown'}`;
+            document.getElementById('profMMR').innerText = userData.mmr || 0;
+            document.getElementById('profMatches').innerText = userData.matches || 0;
+            document.getElementById('profHooks').innerText = (userData.hooks || 0).toLocaleString();
+            
+            // Если это наш профиль - можно добавить спец. рамку
+            const avatar = document.getElementById('profAvatar');
+            avatar.style.borderColor = userData.nick === user.nick ? '#dc2626' : '#4b5563';
+
+            toggleModal('profileModal');
+        }
+
         async function handleLogin() {
             const nick = document.getElementById('logUser').value.trim();
             const pass = document.getElementById('logPass').value.trim();
@@ -240,144 +295,53 @@
             const { error } = await pudgeDb.from('pudge_profiles').insert([{ id, nick, password: pass, mmr:0, coins:18068, matches:0, hooks:0 }]);
             
             if(!error) { alert("Успех! Теперь войдите."); toggleAuth(false); }
-            else alert("Ник занят или ошибка БД.");
+            else alert("Ник занят.");
         }
 
         function enterMenu() {
             showScreen('menuScreen');
             document.getElementById('userNickMain').innerText = user.nick;
             document.getElementById('coinsMain').innerText = user.coins.toLocaleString();
-            document.getElementById('rankIconMain').innerText = user.matches < 10 ? "🔒" : "🏆";
-            loadFriends();
-            listenToRequests();
+            document.getElementById('gNickP').innerText = user.nick;
         }
 
-        // --- ДРУЗЬЯ И ЗАЯВКИ ---
-        async function loadFriends() {
-            const list = document.getElementById('friendsList');
-            list.innerHTML = `<p class="text-[10px] opacity-20 italic">Нет друзей</p>`;
-        }
-
-        async function addFriendPrompt() {
-            const rid = prompt("Введите ID игрока:");
-            if(rid && rid !== user.id) {
-                await pudgeDb.from('pudge_requests').insert([{ from_id: user.id, to_id: rid, from_nick: user.nick }]);
-                alert("Заявка отправлена!");
-            }
-        }
-
-        function listenToRequests() {
-            pudgeDb.channel('requests').on('postgres_changes', { event:'INSERT', schema:'public', table:'pudge_requests', filter:`to_id=eq.${user.id}`}, payload => {
-                updateRequestsUI(payload.new);
-            }).subscribe();
-        }
-
-        function updateRequestsUI(req) {
-            const list = document.getElementById('requestsList');
-            list.innerHTML = `
-                <div class="glass p-2 rounded-xl flex justify-between items-center animate-bounce">
-                    <span class="text-xs font-bold">${req.from_nick}</span>
-                    <div class="flex gap-1">
-                        <button onclick="alert('Принято')" class="bg-green-600 p-1 rounded text-[8px]">✓</button>
-                        <button class="bg-red-600 p-1 rounded text-[8px]">✕</button>
-                    </div>
-                </div>
-            `;
-        }
-
-        // --- ИГРОВОЙ ДВИЖОК ---
+        // ИГРОВАЯ ЛОГИКА (Упрощенная для примера)
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
         const pImg = new Image(); pImg.src = "https://images.genius.com/e05ad2b3029a4feea47ac108100b6eb3.1000x1000x1.png";
 
-        let gameActive = false, pCD = false, hook = { active: false };
-        let player, enemy, score = { p:0, e:0 }, mouseX = 0, mouseY = 0;
+        let gameActive = false, pCD = false;
+        let player, enemy, score = { p:0, e:0 };
 
         function initMatch() {
             toggleModal('playModal');
             showScreen('gameScreen');
-            player = { x: 100, y: 300, tx: 100, ty: 300, alive: true, respawn: 0 };
-            enemy = { x: 1100, y: 300, tx: 1100, ty: 300, alive: true, respawn: 0 };
+            player = { x: 100, y: 300, tx: 100, ty: 300, alive: true };
+            enemy = { x: 1100, y: 300, tx: 1100, ty: 300, alive: true };
             score = { p:0, e:0 }; gameActive = true;
-            updateScoreUI(); requestAnimationFrame(gameLoop);
-        }
-
-        function updateScoreUI() { document.getElementById('gScore').innerText = `${score.p} - ${score.e}`; }
-
-        canvas.addEventListener('contextmenu', e => {
-            e.preventDefault();
-            const r = canvas.getBoundingClientRect();
-            if(player.alive) { player.tx = e.clientX - r.left; player.ty = e.clientY - r.top; if(player.tx > 550) player.tx = 550; }
-        });
-
-        canvas.addEventListener('mousemove', e => {
-            const r = canvas.getBoundingClientRect();
-            mouseX = e.clientX - r.left; mouseY = e.clientY - r.top;
-        });
-
-        window.onkeydown = e => {
-            if(e.code === 'KeyQ' && gameActive && !pCD && !hook.active && player.alive) {
-                hook = { active: true, owner: player, x: player.x, y: player.y, sx: player.x, sy: player.y };
-                const ang = Math.atan2(mouseY - player.y, mouseX - player.x);
-                hook.vx = Math.cos(ang) * 14; hook.vy = Math.sin(ang) * 14;
-                startCD();
-            }
-        };
-
-        function startCD() {
-            pCD = true; const fill = document.getElementById('cdFill');
-            fill.classList.remove('hidden'); fill.classList.add('flex');
-            let t = 7; fill.innerText = t;
-            const i = setInterval(() => { t--; fill.innerText = t; if(t <= 0) { clearInterval(i); pCD = false; fill.classList.add('hidden'); } }, 1000);
+            gameLoop();
         }
 
         function gameLoop() {
             if(!gameActive) return;
             ctx.fillStyle = "#121a12"; ctx.fillRect(0,0,1200,600);
-            ctx.fillStyle = "#050505"; ctx.fillRect(560, 0, 80, 600); // River
+            
+            // Отрисовка игроков
+            ctx.drawImage(pImg, player.x-40, player.y-40, 80, 80);
+            ctx.drawImage(pImg, enemy.x-40, enemy.y-40, 80, 80);
 
-            [player, enemy].forEach(u => {
-                if(!u.alive) { if(Date.now() > u.respawn) { u.alive = true; u.x = (u === player) ? 100 : 1100; u.tx = u.x; u.y = 300; u.ty = 300; } return; }
-                let dx = u.tx - u.x, dy = u.ty - u.y, d = Math.sqrt(dx*dx + dy*dy);
-                if(d > 5) { u.x += (dx/d) * 4.5; u.y += (dy/d) * 4.5; }
-                u.x = Math.max(45, Math.min(u === player ? 540 : 1200, u.x));
-                if(u === enemy && u.x < 660) u.x = 660;
-                u.y = Math.max(45, Math.min(555, u.y));
-            });
-
-            if(enemy.alive && Math.random() < 0.02) { enemy.tx = 700 + Math.random()*450; enemy.ty = Math.random()*550; }
-
-            [player, enemy].forEach(p => {
-                if(!p.alive) return;
-                ctx.save(); ctx.fillStyle = "rgba(0,0,0,0.4)";
-                ctx.beginPath(); ctx.ellipse(p.x, p.y + 35, 30, 10, 0, 0, Math.PI*2); ctx.fill();
-                ctx.drawImage(pImg, p.x-45, p.y-45, 90, 90); ctx.restore();
-            });
-
-            if(hook.active) {
-                renderChain();
-                hook.x += hook.vx; hook.y += hook.vy;
-                let target = (hook.owner === player) ? enemy : player;
-                let d = Math.sqrt((hook.x - target.x)**2 + (hook.y - target.y)**2);
-                if(d < 45 && target.alive) { 
-                    target.alive = false; target.respawn = Date.now() + 3000;
-                    if(target === enemy) score.p++; else score.e++;
-                    updateScoreUI(); hook.active = false;
-                }
-                if(Math.sqrt((hook.x-hook.sx)**2+(hook.y-hook.sy)**2) > 950) hook.active = false;
-            }
-            if(score.p >= 7 || score.e >= 7) exitGame();
-            else requestAnimationFrame(gameLoop);
+            requestAnimationFrame(gameLoop);
         }
 
-        function renderChain() {
-            ctx.strokeStyle = "#555"; ctx.lineWidth = 4;
-            ctx.beginPath(); ctx.moveTo(hook.owner.x, hook.owner.y);
-            ctx.lineTo(hook.x, hook.y); ctx.stroke();
-            ctx.fillStyle = "#fff"; ctx.fillRect(hook.x-10, hook.y-10, 20, 20);
+        function exitGame() { 
+            gameActive = false; 
+            showScreen('menuScreen'); 
         }
 
-        function exitGame() { gameActive = false; showScreen('menuScreen'); }
+        function addFriendPrompt() {
+            const id = prompt("Введите ID игрока:");
+            if(id) alert("Запрос отправлен игроку " + id);
+        }
     </script>
 </body>
 </html>

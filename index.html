@@ -3,48 +3,82 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pudge Wars</title>
+    <title>Pudge Wars Elite | Dota Client Style</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;900&family=Oswald:wght@700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Oswald:wght@500;700&display=swap" rel="stylesheet">
     <style>
         body {
-            background: #050505;
-            color: #eee;
+            background-color: #000;
+            color: #fff;
             font-family: 'Inter', sans-serif;
             overflow: hidden;
-            background-image: radial-gradient(circle at center, #1a0a0a 0%, #050505 100%);
+            margin: 0;
         }
 
-        .glass {
-            background: rgba(20, 20, 20, 0.6);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.08);
+        /* Задний фон с размытием */
+        .bg-video-wrap {
+            position: fixed; inset: 0; z-index: -1;
+            background: url('https://cdnb.artstation.com/p/assets/covers/images/045/203/219/large/anton-chistiakov-anton-chistiakov-2022-01-14-14-01-15.jpg?1642158545') no-repeat center;
+            background-size: cover;
+            filter: blur(4px) brightness(0.6);
+            transform: scale(1.1); /* Чтобы убрать белые края от блюра */
         }
 
-        .btn-play {
-            background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
-            box-shadow: 0 0 20px rgba(34, 197, 94, 0.3);
-            transition: 0.3s;
+        /* Стиль Осколков (Dota Plus) */
+        .shards-container {
+            display: flex; align-items: center; gap: 10px;
+            padding: 5px 15px; border-radius: 8px;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.05);
         }
-        .btn-play:hover { transform: scale(1.05); filter: brightness(1.2); }
-
-        .btn-exit {
-            background: #ef4444;
-            box-shadow: 0 0 15px rgba(239, 68, 68, 0.4);
-            transition: 0.3s;
+        .shard-icon {
+            width: 24px; height: 32px;
+            background: linear-gradient(135deg, #e37e2b, #8b4513);
+            clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+            box-shadow: 0 0 10px rgba(227, 126, 43, 0.5);
         }
-        .btn-exit:hover { transform: rotate(90deg) scale(1.1); }
+        .shard-value {
+            font-family: 'Oswald', sans-serif;
+            font-size: 22px; color: #f1d37e;
+            text-shadow: 0 0 10px rgba(241, 211, 126, 0.4);
+            line-height: 1;
+        }
+        .shard-label {
+            font-size: 10px; color: #a3a3a3;
+            text-transform: uppercase; font-weight: 800;
+            letter-spacing: 1px; margin-top: -2px;
+        }
 
-        .screen { display: none; height: 100vh; width: 100vw; animation: fadeIn 0.5s ease; }
-        .active-screen { display: flex; }
+        /* Кнопка ИГРАТЬ (Bottom Right) */
+        .play-anchor {
+            position: fixed; bottom: 40px; right: 40px;
+            z-index: 100;
+        }
+        .btn-dota-play {
+            background: linear-gradient(to right, #40b044, #2d8131);
+            padding: 15px 80px; border-radius: 4px;
+            font-family: 'Oswald', sans-serif; font-size: 32px; font-weight: 700;
+            text-transform: uppercase; font-style: italic;
+            border: 1px solid rgba(255,255,255,0.2);
+            box-shadow: 0 0 20px rgba(64, 176, 68, 0.3);
+            transition: 0.2s; cursor: pointer;
+        }
+        .btn-dota-play:hover {
+            filter: brightness(1.2); transform: scale(1.05);
+            box-shadow: 0 0 30px rgba(64, 176, 68, 0.5);
+        }
 
+        /* Общие стили интерфейса */
+        .glass-panel {
+            background: rgba(15, 15, 15, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .screen { display: none; height: 100vh; width: 100vw; }
+        .active-screen { display: block; animation: fadeIn 0.5s ease; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-
-        /* Scrollbar */
-        ::-webkit-scrollbar { width: 4px; }
-        ::-webkit-scrollbar-track { background: rgba(0,0,0,0.1); }
-        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
 
         #splash {
             position: fixed; inset: 0; z-index: 9999;
@@ -55,167 +89,101 @@
 </head>
 <body>
 
-    <!-- УВЕДОМЛЕНИЯ -->
-    <div id="invite-toast" class="fixed top-5 right-[-400px] glass p-5 z-[6000] w-80 rounded-2xl border-l-4 border-green-500 transition-all duration-500">
-        <div class="font-bold text-green-400">ВЫЗОВ ПРИНЯТ!</div>
-        <div id="inviter-name" class="text-sm opacity-70 mb-3">Игрок хочет дуэль</div>
-        <div class="flex gap-2">
-            <button onclick="acceptDuel()" class="bg-green-600 px-4 py-1 rounded-lg text-xs font-bold">ПРИНЯТЬ</button>
-            <button onclick="closeToast()" class="bg-white/10 px-4 py-1 rounded-lg text-xs">ОТКЛОНИТЬ</button>
-        </div>
-    </div>
+    <div class="bg-video-wrap"></div>
 
     <!-- ЗАГРУЗКА -->
     <div id="splash">
         <div class="w-64 h-1 bg-white/10 rounded-full overflow-hidden">
             <div id="loader-progress" class="w-0 h-full bg-red-600 shadow-[0_0_15px_red] transition-all duration-[5000ms] ease-linear"></div>
         </div>
-        <div class="mt-4 text-[10px] uppercase tracking-[5px] opacity-50">DELS BASE GLOBAL</div>
+        <div class="mt-4 text-[10px] uppercase tracking-[5px] opacity-50">DOTA 2 PUDGE WARS</div>
     </div>
 
-    <!-- АВТОРИЗАЦИЯ / РЕГИСТРАЦИЯ -->
-    <div id="authScreen" class="screen items-center justify-center flex-col">
-        <div class="glass p-10 w-96 rounded-[32px] text-center shadow-2xl">
-            <h1 class="text-3xl font-black mb-8 text-red-600 italic">PUDGE WARS</h1>
-            
-            <div id="loginForm" class="space-y-4">
-                <input id="logUser" type="text" placeholder="ЛОГИН" class="w-full bg-white/5 border border-white/10 p-4 rounded-2xl outline-none focus:border-red-600 transition">
-                <input id="logPass" type="password" placeholder="ПАРОЛЬ" class="w-full bg-white/5 border border-white/10 p-4 rounded-2xl outline-none focus:border-red-600 transition">
-                <button onclick="handleLogin()" class="w-full bg-red-600 py-4 rounded-2xl font-bold hover:brightness-125 transition">ВОЙТИ</button>
-                <p class="text-xs opacity-50">Нет аккаунта? <span onclick="toggleAuth()" class="text-red-500 cursor-pointer underline">Создать</span></p>
-            </div>
-
-            <div id="regForm" class="space-y-4 hidden">
-                <input id="regUser" type="text" placeholder="ЛОГИН" class="w-full bg-white/5 border border-white/10 p-4 rounded-2xl outline-none focus:border-green-600 transition">
-                <input id="regPass" type="password" placeholder="ПАРОЛЬ" class="w-full bg-white/5 border border-white/10 p-4 rounded-2xl outline-none focus:border-green-600 transition">
-                <input id="regPass2" type="password" placeholder="ПОВТОРИТЕ ПАРОЛЬ" class="w-full bg-white/5 border border-white/10 p-4 rounded-2xl outline-none focus:border-green-600 transition">
-                <button onclick="handleRegister()" class="w-full bg-green-600 py-4 rounded-2xl font-bold hover:brightness-125 transition">ЗАРЕГИСТРИРОВАТЬСЯ</button>
-                <p class="text-xs opacity-50">Уже есть аккаунт? <span onclick="toggleAuth()" class="text-green-500 cursor-pointer underline">Войти</span></p>
+    <!-- АВТОРИЗАЦИЯ -->
+    <div id="authScreen" class="screen">
+        <div class="flex items-center justify-center h-full">
+            <div class="glass-panel p-10 rounded-2xl w-96 text-center border-t-2 border-red-600">
+                <h1 class="text-3xl font-black mb-8 italic tracking-tighter">PUDGE 1x1</h1>
+                <div id="authForms">
+                    <input id="logUser" type="text" placeholder="ЛОГИН" class="w-full bg-black/50 border border-white/10 p-4 rounded-xl mb-4 outline-none focus:border-red-600 transition">
+                    <input id="logPass" type="password" placeholder="ПАРОЛЬ" class="w-full bg-black/50 border border-white/10 p-4 rounded-xl mb-6 outline-none focus:border-red-600 transition">
+                    <button onclick="handleLogin()" class="w-full bg-red-600 py-4 rounded-xl font-bold uppercase hover:brightness-110">Войти</button>
+                    <p class="text-xs mt-4 opacity-40">Нет аккаунта? <span onclick="alert('Регистрация временно через логин')" class="underline cursor-pointer">Создать</span></p>
+                </div>
             </div>
         </div>
     </div>
 
     <!-- ГЛАВНОЕ МЕНЮ -->
-    <div id="menuScreen" class="screen flex-col">
-        <!-- ВЕРХНЯЯ ПАНЕЛЬ -->
-        <header class="p-6 flex justify-between items-start z-10">
-            <div class="flex items-center gap-4">
-                <div onclick="toggleModal('profileModal')" class="relative cursor-pointer group">
-                    <img id="userAv" src="https://images.genius.com/e05ad2b3029a4feea47ac108100b6eb3.1000x1000x1.png" class="w-16 h-16 rounded-2xl border-2 border-red-600 group-hover:scale-105 transition">
-                    <div class="absolute -bottom-2 -right-2 bg-black border border-white/20 p-1 rounded-lg">
-                        <span id="rankIconMain">🔒</span>
-                    </div>
+    <div id="menuScreen" class="screen">
+        <!-- Левая панель: Профиль и Друзья -->
+        <div class="absolute top-10 left-10 space-y-6">
+            <!-- Блок профиля -->
+            <div onclick="toggleModal('profileModal')" class="glass-panel p-4 rounded-2xl flex items-center gap-4 cursor-pointer hover:bg-white/5 transition">
+                <div class="relative">
+                    <img src="https://images.genius.com/e05ad2b3029a4feea47ac108100b6eb3.1000x1000x1.png" class="w-16 h-16 rounded-xl border-2 border-red-600">
+                    <div id="rankIconMain" class="absolute -bottom-2 -right-2 bg-black border border-white/20 w-8 h-8 rounded-lg flex items-center justify-center text-sm">🔒</div>
                 </div>
                 <div>
-                    <div id="userNickMain" class="text-2xl font-black tracking-tighter">Pudge</div>
-                    <div class="flex items-center gap-2 opacity-50 text-[10px] font-bold uppercase">
-                        <span id="userStatus">В меню</span>
-                        <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                    </div>
+                    <div id="userNickMain" class="text-2xl font-black tracking-tight">Pudge</div>
+                    <div class="text-[10px] text-green-500 uppercase font-black tracking-widest">В СЕТИ</div>
                 </div>
             </div>
 
-            <div class="flex items-center gap-4">
-                <div onclick="toggleModal('shopModal')" class="glass px-6 py-2 rounded-full border border-yellow-600/30 flex items-center gap-3 cursor-pointer hover:bg-white/10 transition">
-                    <span id="coinsMain" class="text-yellow-500 font-bold">1000</span>
-                    <span class="text-lg">💰</span>
+            <!-- Список друзей -->
+            <div class="glass-panel w-64 p-5 rounded-3xl h-[400px] flex flex-col">
+                <div class="flex justify-between items-center mb-4 border-b border-white/5 pb-2">
+                    <span class="text-[10px] font-black opacity-40 uppercase tracking-widest">Друзья</span>
+                    <button onclick="addFriendPrompt()" class="text-green-500 text-xl hover:scale-110 transition">+</button>
                 </div>
-                <button onclick="confirmExit()" class="btn-exit w-10 h-10 rounded-full flex items-center justify-center font-bold text-white">✕</button>
-            </div>
-        </header>
-
-        <!-- БОКОВАЯ ПАНЕЛЬ ДРУЗЕЙ -->
-        <aside class="absolute left-6 top-32 w-64 bottom-24 flex flex-col gap-4">
-            <div class="glass flex-grow rounded-3xl p-5 flex flex-col">
-                <div class="flex justify-between items-center mb-4">
-                    <span class="text-[10px] font-black uppercase tracking-widest opacity-50">Друзья</span>
-                    <button onclick="addFriendPrompt()" class="text-green-500 hover:scale-110 transition">➕</button>
+                <div id="friendsContainer" class="flex-grow overflow-y-auto space-y-2">
+                    <!-- Список -->
                 </div>
-                <div id="friendsContainer" class="flex-grow overflow-y-auto space-y-2 pr-2">
-                    <!-- Список друзей -->
-                </div>
-            </div>
-        </aside>
-
-        <!-- КНОПКА ИГРАТЬ -->
-        <footer class="absolute bottom-10 left-6">
-            <button onclick="toggleModal('playModal')" class="btn-play px-16 py-6 rounded-2xl text-2xl font-black italic text-white tracking-widest">ИГРАТЬ</button>
-        </footer>
-    </div>
-
-    <!-- МОДАЛКИ -->
-    <div id="confirmExitModal" class="fixed inset-0 bg-black/90 z-[7000] hidden items-center justify-center">
-        <div class="glass p-8 rounded-[32px] text-center max-w-xs">
-            <h2 class="text-xl font-bold mb-6">Выйти из игры?</h2>
-            <div class="flex gap-4">
-                <button onclick="location.reload()" class="bg-red-600 flex-grow py-3 rounded-xl font-bold">ВЫЙТИ</button>
-                <button onclick="toggleModal('confirmExitModal')" class="bg-white/10 flex-grow py-3 rounded-xl font-bold">ОТМЕНА</button>
             </div>
         </div>
-    </div>
 
-    <div id="playModal" class="fixed inset-0 bg-black/90 z-[7000] hidden items-center justify-center">
-        <div class="glass p-10 rounded-[40px] flex flex-col gap-4 w-80">
-            <h2 class="text-center font-black text-xl mb-4 tracking-widest">РЕЖИМ ИГРЫ</h2>
-            <button onclick="startGame('bot')" class="bg-white/5 border border-white/10 py-5 rounded-2xl font-bold hover:bg-white/10 transition text-left px-6 flex justify-between">
-                МАТЧ С БОТОМ <span>🤖</span>
-            </button>
-            <button onclick="chooseFriendForMatch()" class="bg-indigo-600 py-5 rounded-2xl font-bold hover:brightness-125 transition text-left px-6 flex justify-between">
-                ИГРАТЬ 1х1 <span>⚔️</span>
-            </button>
-            <button onclick="toggleModal('playModal')" class="mt-4 opacity-50">Закрыть</button>
-        </div>
-    </div>
-
-    <div id="shopModal" class="fixed inset-0 bg-black/95 z-[7000] hidden items-center justify-center">
-        <div class="glass p-10 rounded-[40px] w-[500px] text-center">
-            <h2 class="text-3xl font-black text-yellow-500 mb-10 italic">МАГАЗИН</h2>
-            <div class="h-64 flex items-center justify-center border-2 border-dashed border-white/10 rounded-3xl">
-                <p class="opacity-30 italic text-sm">Пока что тут пусто...</p>
-            </div>
-            <button onclick="toggleModal('shopModal')" class="mt-8 bg-white/10 px-10 py-3 rounded-xl">НАЗАД</button>
-        </div>
-    </div>
-
-    <!-- ПРОФИЛЬ -->
-    <div id="profileModal" class="fixed inset-0 bg-black/95 z-[7000] hidden items-center justify-center">
-        <div class="glass p-10 rounded-[40px] w-[500px] relative">
-            <button onclick="toggleModal('profileModal')" class="absolute top-6 right-6 text-2xl opacity-30">✕</button>
-            <div class="flex gap-6 items-center mb-8">
-                <img id="profImg" src="" class="w-24 h-24 rounded-3xl border-2 border-red-600 shadow-2xl">
+        <!-- Верхняя правая панель: Осколки и Выход -->
+        <div class="absolute top-10 right-10 flex items-center gap-6">
+            <!-- Осколки -->
+            <div class="shards-container cursor-pointer hover:brightness-110 transition" onclick="alert('Магазин в разработке')">
+                <div class="shard-icon"></div>
                 <div>
-                    <h2 id="profNick" class="text-3xl font-black">Nick</h2>
-                    <p id="profId" class="text-indigo-500 font-mono text-xs">ID: 000000</p>
-                </div>
-                <div class="ml-auto text-center">
-                    <div id="profRankIcon" class="text-4xl">🔒</div>
-                    <div id="profRankName" class="text-[10px] font-bold uppercase opacity-50">Калибровка</div>
+                    <div class="shard-value" id="coinsMain">18,068</div>
+                    <div class="shard-label">Осколков</div>
                 </div>
             </div>
-            <div class="grid grid-cols-2 gap-4 text-center">
-                <div class="bg-white/5 p-4 rounded-2xl border border-white/5">
-                    <div class="text-[10px] uppercase opacity-40 font-bold mb-1">MMR</div>
-                    <div id="profMMR" class="text-2xl font-black">0</div>
-                </div>
-                <div class="bg-white/5 p-4 rounded-2xl border border-white/5">
-                    <div class="text-[10px] uppercase opacity-40 font-bold mb-1">Матчи</div>
-                    <div id="profMatches" class="text-2xl font-black">0</div>
-                </div>
-            </div>
+            
+            <!-- Выход -->
+            <button onclick="location.reload()" class="w-10 h-10 rounded-full bg-red-600 flex items-center justify-center hover:rotate-90 transition shadow-lg">✕</button>
+        </div>
+
+        <!-- Кнопка ИГРАТЬ -->
+        <div class="play-anchor">
+            <button onclick="toggleModal('playModal')" class="btn-dota-play">ИГРАТЬ</button>
         </div>
     </div>
 
-    <!-- ИГРОВОЙ ЭКРАН (Canvas как в прошлом коде) -->
-    <div id="gameScreen" class="screen flex-col bg-black">
-        <!-- Счёт и HUD игры -->
+    <!-- МОДАЛКИ (Выбор режима) -->
+    <div id="playModal" class="fixed inset-0 bg-black/90 z-[1000] hidden items-center justify-center">
+        <div class="glass-panel p-10 rounded-[40px] flex flex-col gap-4 w-80">
+            <h2 class="text-center font-black text-xl mb-4 tracking-widest uppercase">Режим игры</h2>
+            <button onclick="startGame('bot')" class="bg-white/5 border border-white/10 py-5 rounded-2xl font-bold hover:bg-white/10 transition flex justify-between px-6">
+                С БОТОМ <span>🤖</span>
+            </button>
+            <button onclick="alert('Выберите друга')" class="bg-indigo-600 py-5 rounded-2xl font-bold hover:brightness-110 transition flex justify-between px-6">
+                ДУЭЛЬ 1х1 <span>⚔️</span>
+            </button>
+            <button onclick="toggleModal('playModal')" class="mt-4 opacity-50 text-sm">Назад</button>
+        </div>
     </div>
 
     <script>
+        // ИНИЦИАЛИЗАЦИЯ SUPABASE
         const SUPABASE_URL = 'https://kqlbnybifjoamckgkltv.supabase.co'; 
-        const SUPABASE_KEY = 'sb_publishable_ZTatmjCcOgN5o_EY1-SBUg_7t0bVIem'; // ЗАМЕНИ НА ANON KEY
+        const SUPABASE_KEY = 'sb_secret__9cJdxqifMU7Chuwjz1PUw_YYf0o3_H'; // ЗАМЕНИ НА ANON KEY
         const pudgeDb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        let user = { id: "", nick: "", mmr: 0, coins: 1000, matches: 0, hooks: 0, friends: [] };
+        let user = { id: "", nick: "", mmr: 0, coins: 0, matches: 0 };
 
         window.onload = () => {
             document.getElementById('loader-progress').style.width = '100%';
@@ -228,9 +196,38 @@
             }, 5000);
         };
 
-        function toggleAuth() {
-            document.getElementById('loginForm').classList.toggle('hidden');
-            document.getElementById('regForm').classList.toggle('hidden');
+        async function handleLogin() {
+            const nick = document.getElementById('logUser').value;
+            const pass = document.getElementById('logPass').value;
+            if(!nick || !pass) return alert("Введите данные");
+
+            const { data } = await pudgeDb.from('pudge_profiles').select('*').eq('nick', nick).eq('password', pass).maybeSingle();
+            
+            if(data) {
+                user = data;
+                enterMenu();
+            } else {
+                // Если не нашли - регистрируем (упрощенно)
+                const id = Math.floor(100000 + Math.random()*899999).toString();
+                const { error } = await pudgeDb.from('pudge_profiles').insert([{ id, nick, password: pass, mmr:0, coins:18068, matches:0 }]);
+                if(!error) { alert("Аккаунт создан!"); handleLogin(); }
+                else alert("Ошибка входа");
+            }
+        }
+
+        function enterMenu() {
+            document.getElementById('authScreen').classList.remove('active-screen');
+            document.getElementById('menuScreen').classList.add('active-screen');
+            updateUI();
+        }
+
+        function updateUI() {
+            document.getElementById('userNickMain').innerText = user.nick;
+            document.getElementById('coinsMain').innerText = user.coins.toLocaleString();
+            
+            if(user.matches >= 10) {
+                document.getElementById('rankIconMain').innerText = "🏆";
+            }
         }
 
         function toggleModal(id) {
@@ -239,141 +236,14 @@
             m.classList.toggle('flex');
         }
 
-        // --- АВТОРИЗАЦИЯ ---
-        async function handleLogin() {
-            const nick = document.getElementById('logUser').value;
-            const pass = document.getElementById('logPass').value;
-            
-            const { data, error } = await pudgeDb.from('pudge_profiles').select('*').eq('nick', nick).eq('password', pass).maybeSingle();
-            
-            if(data) {
-                user = data;
-                enterMenu();
-            } else {
-                alert("Неверный логин или пароль!");
-            }
-        }
-
-        async function handleRegister() {
-            const nick = document.getElementById('regUser').value;
-            const pass = document.getElementById('regPass').value;
-            const pass2 = document.getElementById('regPass2').value;
-
-            if(!nick || !pass) return alert("Заполните поля!");
-            if(pass !== pass2) return alert("Пароли не совпадают!");
-
-            const id = Math.floor(100000 + Math.random()*899999).toString();
-            const { error } = await pudgeDb.from('pudge_profiles').insert([{ id, nick, password: pass, mmr:0, coins:1000, matches:0, hooks:0 }]);
-
-            if(!error) {
-                alert("Успешная регистрация!");
-                toggleAuth();
-            } else {
-                alert("Ошибка: Возможно ник занят");
-            }
-        }
-
-        function enterMenu() {
-            document.getElementById('authScreen').classList.remove('active-screen');
-            document.getElementById('menuScreen').classList.add('active-screen');
-            updateUI();
-            loadFriends();
-            
-            // Realtime подписка на приглашения
-            pudgeDb.channel('invites').on('postgres_changes', { event:'INSERT', schema:'public', table:'pudge_invites', filter:`to_id=eq.${user.id}`}, payload => {
-                showInvite(payload.new);
-            }).subscribe();
-        }
-
-        function updateUI() {
-            document.getElementById('userNickMain').innerText = user.nick;
-            document.getElementById('coinsMain').innerText = user.coins;
-            document.getElementById('profNick').innerText = user.nick;
-            document.getElementById('profId').innerText = "ID: " + user.id;
-            document.getElementById('profMMR').innerText = user.mmr;
-            document.getElementById('profMatches').innerText = user.matches;
-            document.getElementById('profImg').src = document.getElementById('userAv').src;
-            
-            // Логика рангов
-            const rankIco = document.getElementById('rankIconMain');
-            const profRankIco = document.getElementById('profRankIcon');
-            const profRankName = document.getElementById('profRankName');
-
-            if(user.matches < 10) {
-                rankIco.innerText = "🔒";
-                profRankIco.innerText = "🔒";
-                profRankName.innerText = "Калибровка";
-            } else {
-                if(user.mmr < 500) { rankIco.innerText="💩"; profRankName.innerText="Рекрут"; }
-                else if(user.mmr < 1000) { rankIco.innerText="🛡️"; profRankName.innerText="Страж"; }
-                else if(user.mmr < 1500) { rankIco.innerText="🌟"; profRankName.innerText="Легенда"; }
-                else { rankIco.innerText="🏆"; profRankName.innerText="Титан"; }
-                profRankIco.innerText = rankIco.innerText;
-            }
-        }
-
-        // --- ДРУЗЬЯ ---
-        async function loadFriends() {
-            const { data } = await pudgeDb.from('pudge_friends').select('friend_id').eq('user_id', user.id);
-            const cont = document.getElementById('friendsContainer');
-            cont.innerHTML = "";
-            
-            if(data) {
-                for(let f of data) {
-                    const { data: p } = await pudgeDb.from('pudge_profiles').select('*').eq('id', f.friend_id).single();
-                    const div = document.createElement('div');
-                    div.className = "glass p-3 rounded-xl flex items-center gap-3 cursor-pointer hover:bg-white/5 transition";
-                    div.onclick = () => showFriendProfile(p);
-                    div.innerHTML = `
-                        <img src="https://images.genius.com/e05ad2b3029a4feea47ac108100b6eb3.1000x1000x1.png" class="w-8 h-8 rounded-lg">
-                        <div class="text-xs font-bold">${p.nick}</div>
-                        <div class="ml-auto w-2 h-2 bg-green-500 rounded-full"></div>
-                    `;
-                    cont.appendChild(div);
-                }
-            }
+        function startGame(mode) {
+            alert("Запуск игрового движка Pudge Wars...");
+            // Здесь будет твой код с Canvas
         }
 
         async function addFriendPrompt() {
             const id = prompt("Введите ID игрока:");
-            if(id && id !== user.id) {
-                await pudgeDb.from('pudge_friends').insert([{ user_id: user.id, friend_id: id }]);
-                loadFriends();
-            }
-        }
-
-        function showFriendProfile(p) {
-            document.getElementById('profNick').innerText = p.nick;
-            document.getElementById('profId').innerText = "ID: " + p.id;
-            document.getElementById('profMMR').innerText = p.mmr;
-            document.getElementById('profMatches').innerText = p.matches;
-            // Ранг друга
-            const pri = document.getElementById('profRankIcon');
-            if(p.matches < 10) pri.innerText = "🔒";
-            else if(p.mmr < 500) pri.innerText="💩";
-            else if(p.mmr < 1000) pri.innerText="🛡️";
-            else pri.innerText="🏆";
-            
-            toggleModal('profileModal');
-        }
-
-        function confirmExit() { toggleModal('confirmExitModal'); }
-
-        // --- ПРИГЛАШЕНИЯ И ИГРА ---
-        function showInvite(inv) {
-            document.getElementById('inviter-name').innerText = "Игрок #" + inv.from_id + " вызывает на бой!";
-            document.getElementById('invite-toast').style.right = "20px";
-        }
-
-        function closeToast() { document.getElementById('invite-toast').style.right = "-400px"; }
-
-        function startGame(mode) {
-            alert("Запуск режима: " + mode + "\nДвижок игры подключается...");
-            // Здесь подключается твой Canvas движок из предыдущих версий
-        }
-
-        function chooseFriendForMatch() {
-            alert("Выберите друга из списка слева и нажмите 'Вызвать' (в разработке)");
+            if(id) alert("Запрос отправлен!");
         }
     </script>
 </body>

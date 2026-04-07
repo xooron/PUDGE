@@ -5,19 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dota 2: Pudge Wars Pro | Supabase Edition</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Подключаем Supabase SDK -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@500;700&family=Cinzel:wght@700&display=swap');
         
         body { background: #050705; color: #eee; font-family: 'Oswald', sans-serif; overflow: hidden; user-select: none; }
 
-        /* Загрузка */
+        /* Загрузочный экран */
         #splash {
             position: fixed; inset: 0;
             background: url('https://i.ytimg.com/vi/hkGEwslJVPI/maxresdefault.jpg') no-repeat center center;
             background-size: cover; z-index: 2000;
             display: flex; flex-direction: column; align-items: center; justify-content: flex-end; padding-bottom: 100px;
+            transition: opacity 1s ease;
         }
         .loader-bar { width: 60%; height: 6px; background: #111; border: 1px solid #333; position: relative; }
         #loader-progress { width: 0%; height: 100%; background: #a51d2d; box-shadow: 0 0 15px #f87171; transition: width 5s linear; }
@@ -25,7 +25,7 @@
         .screen { display: none; height: 100vh; width: 100vw; position: relative; }
         .active-screen { display: flex; flex-direction: column; }
 
-        /* Header */
+        /* Шапка боя */
         .battle-header {
             background: linear-gradient(180deg, #1a1e1a 0%, #050705 100%);
             border-bottom: 2px solid #2d352d;
@@ -33,10 +33,11 @@
         }
         .score-val { font-family: 'Cinzel', serif; font-size: 3rem; color: #fff; text-shadow: 0 0 15px #ff0000; }
 
-        /* Game UI */
+        /* Контейнер игры */
         #gameContainer { position: relative; width: 1200px; margin: 0 auto; }
         canvas { background: #0a0c0a; display: block; border: 2px solid #1a201a; cursor: crosshair; }
 
+        /* Всплывающие надписи Попал/Проиграл */
         .status-popup {
             position: absolute; pointer-events: none; animation: floatUp 1.2s ease-out forwards;
             font-size: 4rem; font-weight: 900; font-style: italic; z-index: 100;
@@ -47,6 +48,7 @@
             100% { transform: translateY(-120px) scale(1); opacity: 0; }
         }
 
+        /* HUD способностей */
         .hud-panel {
             position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
             background: rgba(0,0,0,0.9); padding: 10px 25px; border: 2px solid #333; border-radius: 4px;
@@ -67,22 +69,23 @@
 </head>
 <body>
 
+    <!-- ЗАГРУЗКА -->
     <div id="splash">
         <div class="loader-bar"><div id="loader-progress"></div></div>
-        <div class="mt-4 text-white uppercase tracking-[10px] font-bold text-xs">Connecting to DELS Base...</div>
+        <div class="mt-4 text-white uppercase tracking-[10px] font-bold text-xs" id="loader-text">Connecting to DELS Base...</div>
     </div>
 
-    <!-- AUTH SCREEN -->
+    <!-- ЭКРАН РЕГИСТРАЦИИ -->
     <div id="authScreen" class="screen items-center justify-center bg-[#050705]">
         <div class="bg-[#111] p-10 border border-[#333] rounded shadow-2xl w-96 text-center">
-            <h1 class="text-3xl font-bold text-red-700 mb-8 italic italic uppercase tracking-tighter">Pudge Wars 1x1</h1>
+            <h1 class="text-3xl font-bold text-red-700 mb-8 italic uppercase tracking-tighter">Pudge Wars 1x1</h1>
             <input id="regNick" type="text" placeholder="ИМЯ МАСТЕРА" class="w-full bg-black border border-[#333] p-4 text-white mb-4 outline-none focus:border-red-600 font-bold">
             <input id="regDesc" type="text" placeholder="ОПИСАНИЕ" class="w-full bg-black border border-[#333] p-4 text-white mb-8 outline-none focus:border-red-600">
             <button onclick="saveAndEnter()" class="w-full pudge-btn py-4 font-bold uppercase italic hover:brightness-125 transition">В БОЙ</button>
         </div>
     </div>
 
-    <!-- MAIN MENU -->
+    <!-- ГЛАВНОЕ МЕНЮ -->
     <div id="menuScreen" class="screen">
         <header class="p-6 flex justify-between bg-[#0a0a0a] border-b border-zinc-800">
             <div onclick="toggleProfile()" class="flex items-center gap-4 cursor-pointer">
@@ -99,7 +102,7 @@
         </main>
     </div>
 
-    <!-- PROFILE -->
+    <!-- МОДАЛКА ПРОФИЛЯ -->
     <div id="profileModal" class="fixed inset-0 bg-black/95 z-[500] hidden items-center justify-center">
         <div class="bg-[#111] border border-red-900 p-10 w-full max-w-2xl relative">
             <button onclick="toggleProfile()" class="absolute top-4 right-6 text-4xl text-zinc-600 hover:text-white">&times;</button>
@@ -123,6 +126,7 @@
         </div>
     </div>
 
+    <!-- ЭКРАН ИГРЫ -->
     <div id="gameScreen" class="screen">
         <div class="battle-header">
             <div class="text-right w-80">
@@ -144,46 +148,53 @@
                 <div class="absolute -top-1 -left-1 bg-black text-[10px] border border-zinc-600 px-1 font-bold">Q</div>
             </div>
             <div class="text-sm text-zinc-400 font-bold leading-tight uppercase">
-                ПКМ: Ходить<br>Q: Хук<br>7 Побед
+                ПКМ: Ходить (Dota Style)<br>Q: Мгновенный Хук (Курсор)<br>Счет до 7
             </div>
         </div>
     </div>
 
     <script>
-        // ИНИЦИАЛИЗАЦИЯ SUPABASE
-        const SUPABASE_URL = 'https://hrixnvenlcsskysijabq.supabase.co'; 
-        const SUPABASE_KEY = 'sb_publishable_UopsF6xZ16MKgPjmhxFSlA_gtYcX7sa';
+        // --- КОНФИГУРАЦИЯ SUPABASE ---
+        const SUPABASE_URL = 'https://kqlbnybifjoamckgkltv.supabase.co'; 
+        const SUPABASE_KEY = 'sb_secret__9cJdxqifMU7Chuwjz1PUw_YYf0o3_H'; // <--- ТВОЙ ANON KEY ИЗ НАСТРОЕК SUPABASE
         const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         let user = { 
             id: localStorage.getItem('pudge_id') || Math.floor(Math.random()*5000000+1000000).toString(),
-            nick: "Pudge", 
-            desc: "Fresh!", 
-            coins: 1000, 
-            matches: 0, 
-            hooks: 0, 
-            mmr: 0 
+            nick: "Pudge", desc: "Fresh!", coins: 1000, matches: 0, hooks: 0, mmr: 0 
         };
 
+        // ЗАГРУЗКА
         window.onload = async () => {
             localStorage.setItem('pudge_id', user.id);
-            document.getElementById('loader-progress').style.width = '100%';
+            const progressBar = document.getElementById('loader-progress');
+            if(progressBar) progressBar.style.width = '100%';
 
-            // Пытаемся загрузить данные из базы при старте
-            const { data, error } = await supabase.from('pudge_profiles').select('*').eq('id', user.id).single();
-            if(data) {
-                user = data;
-                document.getElementById('regNick').value = user.nick;
-                document.getElementById('regDesc').value = user.description || "";
+            const finishLoading = () => {
+                const splash = document.getElementById('splash');
+                if (splash) {
+                    splash.style.opacity = '0';
+                    setTimeout(() => {
+                        splash.style.display = 'none';
+                        showScreen('authScreen');
+                    }, 1000);
+                }
+            };
+
+            // Пытаемся загрузить данные
+            try {
+                const { data, error } = await supabase.from('pudge_profiles').select('*').eq('id', user.id).single();
+                if(data) {
+                    user = data;
+                    document.getElementById('regNick').value = user.nick;
+                    document.getElementById('regDesc').value = user.description || "";
+                }
+            } catch (e) {
+                console.log("Offline mode active");
             }
 
-            setTimeout(() => {
-                document.getElementById('splash').style.opacity = '0';
-                setTimeout(() => {
-                    document.getElementById('splash').style.display = 'none';
-                    showScreen('authScreen');
-                }, 1000);
-            }, 5000);
+            // ПРЕДОХРАНИТЕЛЬ: Скрываем загрузку в любом случае через 5 секунд
+            setTimeout(finishLoading, 5000);
         };
 
         function showScreen(id) {
@@ -197,21 +208,16 @@
             user.nick = n;
             user.description = document.getElementById('regDesc').value || "Pudge Wars Legend";
             
-            // Сохраняем/Обновляем в Supabase
-            const { error } = await supabase.from('pudge_profiles').upsert({
-                id: user.id,
-                nick: user.nick,
-                description: user.description,
-                mmr: user.mmr,
-                coins: user.coins,
-                matches: user.matches,
-                hooks: user.hooks
-            });
-
-            if(error) console.error("Error saving to Supabase:", error);
-
             updateUI();
             showScreen('menuScreen');
+
+            // Сохраняем в Supabase фоном
+            try {
+                await supabase.from('pudge_profiles').upsert({
+                    id: user.id, nick: user.nick, description: user.description,
+                    mmr: user.mmr, coins: user.coins, matches: user.matches, hooks: user.hooks
+                });
+            } catch(e) {}
         }
 
         function toggleProfile() {
@@ -234,7 +240,7 @@
             document.getElementById('coinCount').innerText = user.coins + " 💰";
         }
 
-        // --- GAME ENGINE ---
+        // --- ИГРОВОЙ ДВИЖОК ---
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
         const pImg = new Image(); pImg.src = "https://images.genius.com/e05ad2b3029a4feea47ac108100b6eb3.1000x1000x1.png";
@@ -287,11 +293,13 @@
 
         window.onkeydown = (e) => {
             if(e.code === 'KeyQ') {
-                if(!pCD && !hook.active && player.alive) {
-                    fireHook(player, mouseX, mouseY);
-                }
+                if(!pCD && !hook.active && player.alive) fireHook(player, mouseX, mouseY);
             }
             if(e.code === 'Escape') { gameActive = false; showScreen('menuScreen'); }
+        };
+
+        document.getElementById('hookSlot').onclick = () => {
+            if(!pCD && !hook.active && player.alive) fireHook(player, mouseX, mouseY);
         };
 
         function fireHook(owner, tx, ty) {
@@ -315,7 +323,6 @@
         function startCooldown(who) {
             if(who === 'player') {
                 pCD = true;
-                const slot = document.getElementById('hookSlot');
                 const fill = document.getElementById('cdFill');
                 fill.classList.remove('hidden');
                 let t = 7; fill.innerText = t;
@@ -331,6 +338,7 @@
 
         function gameLoop() {
             if(!gameActive) return;
+
             ctx.fillStyle = "#121a12"; ctx.fillRect(0,0,1200,600);
             let grad = ctx.createLinearGradient(550, 0, 650, 0);
             grad.addColorStop(0, "#050505"); grad.addColorStop(0.5, "#0a1212"); grad.addColorStop(1, "#050505");
@@ -345,10 +353,7 @@
                 }
                 let dx = u.tx - u.x, dy = u.ty - u.y;
                 let d = Math.sqrt(dx*dx + dy*dy);
-                if(d > 5) {
-                    u.x += (dx/d) * 4.4;
-                    u.y += (dy/d) * 4.4;
-                }
+                if(d > 5) { u.x += (dx/d) * 4.4; u.y += (dy/d) * 4.4; }
                 u.x = Math.max(45, Math.min(u === player ? 540 : 1200, u.x));
                 if(u === enemy && u.x < 660) u.x = 660;
                 u.y = Math.max(45, Math.min(555, u.y));
@@ -410,25 +415,16 @@
         async function finish() {
             gameActive = false;
             user.matches++;
-            if(score.p >= 7) { 
-                user.mmr += 40; 
-                user.coins += 200; 
-                alert("ПОБЕДА!"); 
-            } else { 
-                user.mmr -= 60; 
-                alert("ПОРАЖЕНИЕ..."); 
-            }
+            if(score.p >= 7) { user.mmr += 40; user.coins += 200; alert("ПОБЕДА!"); }
+            else { user.mmr -= 60; alert("ПОРАЖЕНИЕ..."); }
             if(user.mmr < 0) user.mmr = 0;
             
-            // Сохранение результатов в Supabase
-            await supabase.from('pudge_profiles').upsert({
-                id: user.id,
-                nick: user.nick,
-                mmr: user.mmr,
-                coins: user.coins,
-                matches: user.matches,
-                hooks: user.hooks
-            });
+            try {
+                await supabase.from('pudge_profiles').upsert({
+                    id: user.id, nick: user.nick, mmr: user.mmr,
+                    coins: user.coins, matches: user.matches, hooks: user.hooks
+                });
+            } catch(e) {}
 
             updateUI();
             showScreen('menuScreen');

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pudge Wars Elite | Multiplayer</title>
+    <title>Pudge Wars Elite | Global Client</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&family=Oswald:wght@500;700&display=swap" rel="stylesheet">
@@ -22,13 +22,11 @@
             box-shadow: 0 0 30px rgba(64, 176, 68, 0.3);
             transition: 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
-        .screen { display: none; height: 100vh; animation: fadeIn 0.4s ease; }
+        .screen { display: none; height: 100vh; animation: fadeIn 0.5s ease; }
         .active-screen { display: block; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes fadeIn { from { opacity: 0; transform: scale(1.02); } to { opacity: 1; transform: scale(1); } }
         #splash { position: fixed; inset: 0; z-index: 9999; background: #000; display: flex; flex-direction: column; align-items: center; justify-content: center; }
         .shard-val { color: #f1d37e; text-shadow: 0 0 10px rgba(241, 211, 126, 0.5); font-family: 'Oswald', sans-serif; }
-        ::-webkit-scrollbar { width: 4px; }
-        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 10px; }
     </style>
 </head>
 <body>
@@ -46,19 +44,19 @@
     <!-- АВТОРИЗАЦИЯ -->
     <div id="authScreen" class="screen">
         <div class="flex items-center justify-center h-full">
-            <div class="glass p-10 rounded-[40px] w-[400px] border-t-2 border-red-600">
-                <h1 id="authTitle" class="text-3xl font-black mb-8 italic text-center uppercase">PUDGE ARENA</h1>
+            <div class="glass p-12 rounded-[40px] w-[450px] border-t-2 border-red-600">
+                <h1 id="authTitle" class="text-4xl font-black mb-10 italic text-center">PUDGE 1x1</h1>
                 <div id="loginForm" class="space-y-4">
-                    <input id="logUser" type="text" placeholder="ЛОГИН" class="w-full bg-black/40 border border-white/10 p-4 rounded-xl outline-none">
-                    <input id="logPass" type="password" placeholder="ПАРОЛЬ" class="w-full bg-black/40 border border-white/10 p-4 rounded-xl outline-none">
-                    <button onclick="handleLogin()" class="w-full bg-red-600 py-4 rounded-xl font-bold hover:brightness-110">ВОЙТИ</button>
+                    <input id="logUser" type="text" placeholder="ЛОГИН" class="w-full bg-black/40 border border-white/10 p-4 rounded-2xl outline-none focus:border-red-600">
+                    <input id="logPass" type="password" placeholder="ПАРОЛЬ" class="w-full bg-black/40 border border-white/10 p-4 rounded-2xl outline-none focus:border-red-600">
+                    <button onclick="handleLogin()" class="w-full bg-red-600 py-4 rounded-2xl font-bold uppercase">ВОЙТИ</button>
                     <p class="text-center text-xs opacity-50">Нет аккаунта? <span onclick="toggleAuth(true)" class="text-red-500 cursor-pointer underline">Создать</span></p>
                 </div>
                 <div id="regForm" class="space-y-4 hidden">
-                    <input id="regUser" type="text" placeholder="ЛОГИН" class="w-full bg-black/40 border border-white/10 p-4 rounded-xl outline-none">
-                    <input id="regPass" type="password" placeholder="ПАРОЛЬ" class="w-full bg-black/40 border border-white/10 p-4 rounded-xl outline-none">
-                    <button onclick="handleRegister()" class="w-full bg-green-600 py-4 rounded-xl font-bold">РЕГИСТРАЦИЯ</button>
-                    <p class="text-center text-xs opacity-50">Есть аккаунт? <span onclick="toggleAuth(false)" class="text-green-500 cursor-pointer underline">Войти</span></p>
+                    <input id="regUser" type="text" placeholder="ЛОГИН" class="w-full bg-black/40 border border-white/10 p-4 rounded-2xl outline-none">
+                    <input id="regPass" type="password" placeholder="ПАРОЛЬ" class="w-full bg-black/40 border border-white/10 p-4 rounded-2xl outline-none">
+                    <button onclick="handleRegister()" class="w-full bg-green-600 py-4 rounded-2xl font-bold uppercase">РЕГИСТРАЦИЯ</button>
+                    <p class="text-center text-xs opacity-50">Уже есть аккаунт? <span onclick="toggleAuth(false)" class="text-green-500 cursor-pointer underline">Войти</span></p>
                 </div>
             </div>
         </div>
@@ -66,107 +64,102 @@
 
     <!-- ГЛАВНОЕ МЕНЮ -->
     <div id="menuScreen" class="screen">
+        <!-- Слева: Профиль и Друзья -->
         <div class="absolute top-10 left-10 bottom-10 flex flex-col gap-6">
-            <!-- Свой профиль -->
-            <div onclick="showUserProfile(user)" class="glass p-4 rounded-3xl flex items-center gap-4 cursor-pointer hover:bg-white/5 transition">
+            <!-- Свой Профиль (КлиКАБЕЛЬНО) -->
+            <div onclick="openUserProfile(user)" class="glass p-4 rounded-3xl flex items-center gap-4 cursor-pointer hover:bg-white/5 transition border-l-4 border-red-600">
                 <div class="relative">
-                    <img src="https://images.genius.com/e05ad2b3029a4feea47ac108100b6eb3.1000x1000x1.png" class="w-16 h-16 rounded-2xl border-2 border-red-600 shadow-lg">
-                    <div class="absolute -bottom-2 -right-2 bg-black border border-white/20 w-8 h-8 rounded-lg flex items-center justify-center text-xs">🏆</div>
+                    <img src="https://images.genius.com/e05ad2b3029a4feea47ac108100b6eb3.1000x1000x1.png" class="w-16 h-16 rounded-2xl border-2 border-red-600">
+                    <div class="absolute -bottom-2 -right-2 bg-black border border-white/20 w-8 h-8 rounded-lg flex items-center justify-center text-xs text-yellow-500">🏆</div>
                 </div>
                 <div>
                     <div id="userNickMain" class="text-2xl font-black">Pudge</div>
-                    <div class="text-[10px] text-green-500 font-bold uppercase tracking-widest">В сети</div>
+                    <div class="text-[10px] text-green-500 font-bold uppercase">В сети</div>
                 </div>
             </div>
 
-            <!-- Список друзей -->
+            <!-- Друзья -->
             <div class="glass w-72 rounded-[32px] flex-grow flex flex-col p-6 overflow-hidden">
                 <div class="flex justify-between items-center mb-4 border-b border-white/5 pb-2">
-                    <span class="text-[10px] font-black opacity-40 uppercase">Друзья</span>
-                    <button onclick="addFriendPrompt()" class="text-green-500 font-bold">+</button>
+                    <span class="text-[10px] font-black opacity-40 uppercase tracking-widest">Друзья</span>
+                    <button onclick="addFriendPrompt()" class="text-green-500 font-bold hover:scale-125 transition">+</button>
                 </div>
-                <div id="friendsList" class="flex-grow overflow-y-auto space-y-2 mb-4"></div>
+                <div id="friendsList" class="flex-grow overflow-y-auto space-y-2 mb-4 pr-2"></div>
                 
                 <div class="border-t border-white/10 pt-4">
-                    <span class="text-[10px] font-black opacity-40 uppercase">Заявки</span>
+                    <span class="text-[10px] font-black opacity-40 uppercase tracking-widest">Заявки</span>
                     <div id="requestsList" class="mt-2 space-y-2 max-h-32 overflow-y-auto"></div>
                 </div>
             </div>
         </div>
 
-        <!-- Валюта -->
+        <!-- Верх справа -->
         <div class="absolute top-10 right-10 flex items-center gap-6">
             <div class="glass-dark px-6 py-2 rounded-xl flex items-center gap-3 border border-white/10">
-                <div class="shard-val text-2xl" id="coinsMain">18,068</div>
-                <div class="text-[9px] uppercase font-black opacity-40 leading-none">Осколков</div>
+                <div class="shard-val text-2xl" id="coinsMain">0</div>
+                <div class="text-[9px] uppercase font-black opacity-40">Осколков</div>
             </div>
+            <button onclick="location.reload()" class="w-12 h-12 rounded-full bg-red-600/20 border border-red-600/50 flex items-center justify-center hover:bg-red-600 transition">✕</button>
         </div>
 
+        <!-- Кнопка Играть -->
         <div class="fixed bottom-10 right-10">
             <button onclick="toggleModal('playModal')" class="btn-play-fixed px-20 py-6 rounded-xl text-4xl font-black italic tracking-tighter uppercase">Играть</button>
         </div>
     </div>
 
-    <!-- ИГРОВОЙ ЭКРАН -->
-    <div id="gameScreen" class="screen bg-[#0a0f0a]">
-        <div class="flex justify-between items-center p-4 bg-zinc-900 border-b-2 border-red-600">
-            <div class="text-blue-400 font-black text-xl uppercase" id="gNick1">PLAYER 1</div>
-            <div class="text-4xl font-black italic tracking-tighter" id="gScore">0 - 0</div>
-            <div class="text-red-500 font-black text-xl uppercase" id="gNick2">PLAYER 2</div>
-        </div>
-        <div id="gameContainer" class="flex items-center justify-center h-[calc(100vh-120px)]">
-            <canvas id="gameCanvas" width="1200" height="600"></canvas>
-        </div>
-        <div class="fixed bottom-6 left-1/2 -translate-x-1/2 glass p-4 flex gap-8 items-center rounded-2xl border-t-2 border-white/10">
-            <div id="hookBtn" class="w-16 h-16 border-2 border-red-600/50 rounded-xl relative overflow-hidden" style="background: url('https://liquipedia.net/commons/images/9/91/Pudge_Meat_Hook_%28Grand_Abscession%29_abilityicon_dota2_gameasset.png') center/cover;">
-                <div id="cdFill" class="absolute inset-0 bg-black/80 hidden items-center justify-center text-2xl font-bold">7</div>
-            </div>
-            <div class="text-[10px] opacity-40 font-bold uppercase leading-tight">ПКМ: Движение<br>Q: Бросить хук</div>
-            <button onclick="exitGame()" class="text-red-500 font-black text-xs underline uppercase">Выйти</button>
-        </div>
-    </div>
-
-    <!-- МОДАЛКИ (Профиль, Инвайт) -->
+    <!-- ОКНО ПРОФИЛЯ -->
     <div id="profileModal" class="fixed inset-0 bg-black/90 z-[5000] hidden items-center justify-center">
         <div class="glass p-8 rounded-[40px] w-96 border-t-4 border-red-600 relative">
-            <button onclick="toggleModal('profileModal')" class="absolute top-4 right-4 opacity-50">✕</button>
+            <button onclick="toggleModal('profileModal')" class="absolute top-6 right-6 text-white/40">✕</button>
             <div class="flex flex-col items-center">
-                <img id="pAvatar" src="https://images.genius.com/e05ad2b3029a4feea47ac108100b6eb3.1000x1000x1.png" class="w-24 h-24 rounded-3xl border-4 border-red-600 mb-4 shadow-2xl">
-                <h2 id="pNick" class="text-3xl font-black italic uppercase tracking-tighter">Pudge</h2>
-                <p id="pId" class="text-[10px] opacity-30 font-mono mb-6">ID: 000000</p>
+                <img src="https://images.genius.com/e05ad2b3029a4feea47ac108100b6eb3.1000x1000x1.png" class="w-24 h-24 rounded-3xl border-4 border-red-600 mb-4 shadow-2xl">
+                <h2 id="profNick" class="text-3xl font-black italic uppercase tracking-tighter">Nick</h2>
+                <p id="profId" class="text-[10px] opacity-30 font-mono mb-6 italic">ID: 000000</p>
+                
                 <div class="grid grid-cols-2 gap-4 w-full">
-                    <div class="bg-white/5 p-4 rounded-2xl text-center">
+                    <div class="bg-white/5 p-4 rounded-2xl text-center border border-white/5">
                         <p class="text-[9px] opacity-40 font-bold uppercase">MMR</p>
-                        <p id="pMmr" class="text-xl font-black text-yellow-500">0</p>
+                        <p id="profMmr" class="text-xl font-black text-yellow-500">0</p>
                     </div>
-                    <div class="bg-white/5 p-4 rounded-2xl text-center">
+                    <div class="bg-white/5 p-4 rounded-2xl text-center border border-white/5">
                         <p class="text-[9px] opacity-40 font-bold uppercase">Матчи</p>
-                        <p id="pMatches" class="text-xl font-black">0</p>
+                        <p id="profMatches" class="text-xl font-black">0</p>
                     </div>
-                    <div class="bg-white/5 p-4 rounded-2xl text-center col-span-2">
+                    <div class="bg-red-600/10 p-4 rounded-2xl text-center col-span-2 border border-red-600/20">
                         <p class="text-[9px] opacity-40 font-bold uppercase">Точных хуков</p>
-                        <p id="pHooks" class="text-xl font-black text-red-500">0</p>
+                        <p id="profHooks" class="text-xl font-black text-red-500">0</p>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <div id="playModal" class="fixed inset-0 bg-black/90 z-[1000] hidden items-center justify-center">
-        <div class="glass p-10 rounded-[40px] flex flex-col gap-4 w-96">
-            <h2 class="font-black text-2xl text-center italic uppercase mb-4">Найти игру</h2>
-            <button onclick="initMatch('bot')" class="bg-white/5 border border-white/10 py-6 rounded-2xl font-bold hover:bg-white/10 transition flex justify-between px-8 italic">ПРОТИВ БОТА <span>🤖</span></button>
-            <p class="text-[10px] text-center opacity-30">Чтобы играть 1х1, нажми на меч ⚔️ рядом с другом в списке.</p>
-            <button onclick="toggleModal('playModal')" class="text-xs opacity-40 uppercase font-bold mt-4">Назад</button>
+    <!-- ИГРОВОЙ ЭКРАН (Классический) -->
+    <div id="gameScreen" class="screen bg-black">
+        <div class="flex justify-between items-center p-6 bg-zinc-900 border-b border-red-600">
+            <div class="text-blue-400 font-bold text-2xl uppercase" id="gNick1">PLAYER</div>
+            <div class="text-4xl font-black italic" id="gScore">0 - 0</div>
+            <div class="text-red-600 font-bold text-2xl uppercase" id="gNick2">OPPONENT</div>
+        </div>
+        <div id="gameContainer" class="flex items-center justify-center h-[calc(100vh-100px)]">
+            <canvas id="gameCanvas" width="1200" height="600"></canvas>
+        </div>
+        <div class="fixed bottom-10 left-1/2 -translate-x-1/2 glass p-4 flex gap-6 items-center rounded-2xl">
+            <div class="w-16 h-16 border-2 border-white/20 rounded-xl" style="background: url('https://liquipedia.net/commons/images/9/91/Pudge_Meat_Hook_%28Grand_Abscession%29_abilityicon_dota2_gameasset.png') center/cover;">
+                <div id="cdFill" class="w-full h-full bg-black/80 hidden items-center justify-center text-2xl font-bold">7</div>
+            </div>
+            <div class="text-[10px] opacity-40 font-bold uppercase italic">ПКМ: Ходить<br>Q: Хук</div>
+            <button onclick="exitGame()" class="text-red-500 font-black text-xs underline">ВЫЙТИ</button>
         </div>
     </div>
 
-    <!-- Уведомление о вызове -->
-    <div id="inviteBox" class="fixed top-10 left-1/2 -translate-x-1/2 glass p-6 rounded-2xl border-2 border-red-600 hidden z-[9999] animate-bounce">
-        <p id="inviteText" class="font-bold text-center mb-4">Dendi вызывает вас на дуэль!</p>
-        <div class="flex gap-4">
-            <button id="acceptBtn" class="bg-green-600 px-6 py-2 rounded-lg font-bold">ПРИНЯТЬ</button>
-            <button onclick="document.getElementById('inviteBox').classList.add('hidden')" class="bg-red-600 px-6 py-2 rounded-lg font-bold">ОТКАЗ</button>
+    <div id="playModal" class="fixed inset-0 bg-black/90 z-[1000] hidden items-center justify-center">
+        <div class="glass p-10 rounded-[40px] flex flex-col gap-4 w-96 text-center">
+            <h2 class="font-black text-2xl mb-4 italic uppercase">Найти игру</h2>
+            <button onclick="initMatch('bot')" class="bg-white/5 border border-white/10 py-6 rounded-2xl font-bold hover:bg-white/10 transition">ПРОТИВ БОТА 🤖</button>
+            <p class="text-[10px] opacity-30 mt-4 uppercase">Чтобы играть с другом, нажми ⚔️ в списке друзей</p>
+            <button onclick="toggleModal('playModal')" class="mt-4 text-xs opacity-40 font-bold">НАЗАД</button>
         </div>
     </div>
 
@@ -176,10 +169,8 @@
         const pudgeDb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         let user = null;
-        let mySide = 'left'; // 'left' или 'right' для онлайна
-        let gameMode = 'bot'; // 'bot' или 'pvp'
-        let currentRoom = null;
-        let opponentData = null;
+        let pCD = false;
+        let gameActive = false;
 
         window.onload = () => {
             document.getElementById('loader-progress').style.width = '100%';
@@ -206,12 +197,12 @@
         }
 
         // --- ПРОФИЛЬ ---
-        function showUserProfile(data) {
-            document.getElementById('pNick').innerText = data.nick;
-            document.getElementById('pId').innerText = `ID: ${data.id}`;
-            document.getElementById('pMmr').innerText = data.mmr;
-            document.getElementById('pMatches').innerText = data.matches;
-            document.getElementById('pHooks').innerText = data.hooks.toLocaleString();
+        function openUserProfile(data) {
+            document.getElementById('profNick').innerText = data.nick;
+            document.getElementById('profId').innerText = `ID: ${data.id}`;
+            document.getElementById('profMmr').innerText = data.mmr || 0;
+            document.getElementById('profMatches').innerText = data.matches || 0;
+            document.getElementById('profHooks').innerText = (data.hooks || 0).toLocaleString();
             toggleModal('profileModal');
         }
 
@@ -219,7 +210,7 @@
         async function handleLogin() {
             const nick = document.getElementById('logUser').value.trim();
             const pass = document.getElementById('logPass').value.trim();
-            const { data } = await pudgeDb.from('pudge_profiles').select('*').eq('nick', nick).eq('password', pass).maybeSingle();
+            const { data, error } = await pudgeDb.from('pudge_profiles').select('*').eq('nick', nick).eq('password', pass).maybeSingle();
             if(data) { user = data; enterMenu(); } else alert("Ошибка входа!");
         }
 
@@ -228,7 +219,7 @@
             const pass = document.getElementById('regPass').value.trim();
             const id = Math.floor(100000 + Math.random()*899999).toString();
             const { error } = await pudgeDb.from('pudge_profiles').insert([{ id, nick, password: pass, mmr:0, coins:18068, matches:0, hooks:0 }]);
-            if(!error) { alert("Успех! Войдите."); toggleAuth(false); } else alert("Ник занят.");
+            if(!error) { alert("Успех! Теперь войдите."); toggleAuth(false); } else alert("Ошибка или ник занят.");
         }
 
         function enterMenu() {
@@ -236,59 +227,55 @@
             document.getElementById('userNickMain').innerText = user.nick;
             document.getElementById('coinsMain').innerText = user.coins.toLocaleString();
             loadFriends();
-            initRealtime();
+            listenToRequests();
         }
 
-        // --- ДРУЗЬЯ И ОНЛАЙН ---
+        // --- ДРУЗЬЯ И ЗАЯВКИ ---
         async function loadFriends() {
-            const { data: requests } = await pudgeDb.from('pudge_requests').select('*').or(`to_id.eq.${user.id},from_id.eq.${user.id}`).eq('status', 'accepted');
+            const { data } = await pudgeDb.from('pudge_requests').select('*').or(`to_id.eq.${user.id},from_id.eq.${user.id}`).eq('status', 'accepted');
             const list = document.getElementById('friendsList');
             list.innerHTML = '';
-            
-            requests?.forEach(req => {
-                const friendNick = req.from_id === user.id ? req.to_nick : req.from_nick;
-                const friendId = req.from_id === user.id ? req.to_id : req.from_id;
-                
+            data?.forEach(r => {
+                const friendNick = r.from_id === user.id ? r.to_nick : r.from_nick;
+                const friendId = r.from_id === user.id ? r.to_id : r.from_id;
                 const div = document.createElement('div');
-                div.className = "flex items-center justify-between p-3 hover:bg-white/5 rounded-2xl transition group";
+                div.className = "flex items-center justify-between p-2 hover:bg-white/5 rounded-xl cursor-pointer transition group";
                 div.innerHTML = `
-                    <div class="flex items-center gap-3 cursor-pointer" onclick="fetchAndShowProfile('${friendId}')">
+                    <div class="flex items-center gap-3" onclick="fetchAndShowProfile('${friendId}')">
                         <div class="w-8 h-8 rounded-lg bg-zinc-800 border border-white/10 flex items-center justify-center text-[10px] font-bold">${friendNick[0]}</div>
                         <span class="text-sm font-bold">${friendNick}</span>
                     </div>
-                    <button onclick="inviteToGame('${friendId}', '${friendNick}')" class="text-green-500 opacity-0 group-hover:opacity-100 transition">⚔️</button>
+                    <button onclick="initMatch('pvp', '${friendNick}')" class="text-green-500 opacity-0 group-hover:opacity-100 transition">⚔️</button>
                 `;
                 list.appendChild(div);
             });
-            loadIncomingRequests();
+            loadIncoming();
         }
 
         async function fetchAndShowProfile(id) {
             const { data } = await pudgeDb.from('pudge_profiles').select('*').eq('id', id).single();
-            if(data) showUserProfile(data);
+            if(data) openUserProfile(data);
         }
 
-        async function addFriendPrompt() {
-            const rid = prompt("Введите ID игрока:");
-            if(rid && rid !== user.id) {
-                await pudgeDb.from('pudge_requests').insert([{ from_id: user.id, to_id: rid, from_nick: user.nick, to_nick: 'Player', status: 'pending' }]);
-                alert("Заявка отправлена!");
-            }
-        }
-
-        async function loadIncomingRequests() {
+        async function loadIncoming() {
             const { data } = await pudgeDb.from('pudge_requests').select('*').eq('to_id', user.id).eq('status', 'pending');
-            const rList = document.getElementById('requestsList');
-            rList.innerHTML = data?.length ? '' : '<p class="text-[10px] opacity-20 italic">Нет заявок</p>';
+            const list = document.getElementById('requestsList');
+            list.innerHTML = data?.length ? '' : '<p class="text-[10px] opacity-20 italic">Нет заявок</p>';
             data?.forEach(r => {
                 const div = document.createElement('div');
                 div.className = "glass p-2 rounded-xl flex justify-between items-center";
-                div.innerHTML = `<span class="text-[10px] font-bold">${r.from_nick}</span>
+                div.innerHTML = `<span class="text-xs font-bold">${r.from_nick}</span>
                     <div class="flex gap-1">
-                        <button onclick="acceptFriend('${r.id}')" class="bg-green-600 px-2 rounded text-[10px]">✓</button>
+                        <button onclick="acceptFriend('${r.id}')" class="bg-green-600 px-2 rounded text-xs">✓</button>
                     </div>`;
-                rList.appendChild(div);
+                list.appendChild(div);
             });
+        }
+
+        function listenToRequests() {
+            pudgeDb.channel('pudge_requests').on('postgres_changes', { event: '*', schema: 'public', table: 'pudge_requests' }, () => {
+                loadFriends();
+            }).subscribe();
         }
 
         async function acceptFriend(id) {
@@ -296,177 +283,98 @@
             loadFriends();
         }
 
-        // --- REALTIME: ИНВАЙТЫ И ГЕЙМПЛЕЙ ---
-        function initRealtime() {
-            // Подписка на заявки (БД)
-            pudgeDb.channel('db_changes').on('postgres_changes', { event:'*', schema:'public', table:'pudge_requests' }, () => {
-                loadFriends();
-            }).subscribe();
-
-            // Broadcast для приглашений в игру
-            currentRoom = pudgeDb.channel(`room_${user.id}`, { config: { broadcast: { self: false } } });
-            currentRoom.on('broadcast', { event: 'invite' }, payload => {
-                const box = document.getElementById('inviteBox');
-                box.classList.remove('hidden');
-                document.getElementById('inviteText').innerText = `${payload.payload.from_nick} вызывает вас!`;
-                document.getElementById('acceptBtn').onclick = () => acceptInvite(payload.payload);
-            }).subscribe();
+        async function addFriendPrompt() {
+            const rid = prompt("Введите ID игрока:");
+            if(rid && rid !== user.id) {
+                const { data } = await pudgeDb.from('pudge_profiles').select('nick').eq('id', rid).maybeSingle();
+                if(data) {
+                    await pudgeDb.from('pudge_requests').insert([{ from_id: user.id, to_id: rid, from_nick: user.nick, to_nick: data.nick, status: 'pending' }]);
+                    alert("Заявка отправлена!");
+                } else alert("Игрок не найден.");
+            }
         }
 
-        function inviteToGame(friendId, friendNick) {
-            pudgeDb.channel(`room_${friendId}`).subscribe((status) => {
-                if(status === 'SUBSCRIBED') {
-                    pudgeDb.channel(`room_${friendId}`).send({
-                        type: 'broadcast',
-                        event: 'invite',
-                        payload: { from_id: user.id, from_nick: user.nick }
-                    });
-                    alert("Вызов отправлен!");
-                }
-            });
-        }
-
-        function acceptInvite(data) {
-            document.getElementById('inviteBox').classList.add('hidden');
-            const gameRoomId = `match_${data.from_id}_${user.id}`;
-            initMatch('pvp', gameRoomId, data.from_nick, 'right');
-            // Сообщаем второму игроку, что заходим
-            pudgeDb.channel(`room_${data.from_id}`).send({ type: 'broadcast', event: 'start', payload: { roomId: gameRoomId, opponent: user.nick } });
-        }
-
-        // Слушаем сигнал начала игры (для того кто вызывал)
-        pudgeDb.channel(`room_${user.id}`).on('broadcast', { event: 'start' }, payload => {
-            initMatch('pvp', payload.payload.roomId, payload.payload.opponent, 'left');
-        });
-
-        // --- ИГРОВОЙ ДВИЖОК ---
+        // --- ИГРА (КЛАССИКА) ---
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
         const pImg = new Image(); pImg.src = "https://images.genius.com/e05ad2b3029a4feea47ac108100b6eb3.1000x1000x1.png";
 
-        let gameActive = false, pCD = false, hook = { active: false };
-        let p1, p2, score = { p1:0, p2:0 }, mouseX = 0, mouseY = 0;
-        let gameChannel = null;
+        let p1, p2, hook = { active: false }, score = { p1:0, p2:0 };
+        let mouseX = 0, mouseY = 0;
 
-        function initMatch(mode, roomId = null, oppNick = "БОТ", side = 'left') {
-            gameMode = mode;
-            mySide = side;
+        function initMatch(mode, oppNick = "DIRE BOT") {
             toggleModal('playModal');
             showScreen('gameScreen');
-            
-            document.getElementById('gNick1').innerText = (side === 'left') ? user.nick : oppNick;
-            document.getElementById('gNick2').innerText = (side === 'left') ? oppNick : user.nick;
-
+            document.getElementById('gNick1').innerText = user.nick;
+            document.getElementById('gNick2').innerText = oppNick;
             p1 = { x: 100, y: 300, tx: 100, ty: 300, alive: true, respawn: 0 };
             p2 = { x: 1100, y: 300, tx: 1100, ty: 300, alive: true, respawn: 0 };
-            score = { p1:0, p2:0 }; 
+            score = { p1:0, p2:0 };
             gameActive = true;
-
-            if(mode === 'pvp') {
-                gameChannel = pudgeDb.channel(roomId, { config: { broadcast: { ack: false } } });
-                gameChannel.on('broadcast', { event: 'sync' }, payload => {
-                    const data = payload.payload;
-                    if(mySide === 'left') {
-                        p2.x = data.x; p2.y = data.y;
-                        if(data.hook.active) { hook = data.hook; hook.owner = p2; }
-                    } else {
-                        p1.x = data.x; p1.y = data.y;
-                        if(data.hook.active) { hook = data.hook; hook.owner = p1; }
-                    }
-                }).subscribe();
-            }
-
             requestAnimationFrame(gameLoop);
         }
 
-        canvas.oncontextmenu = e => {
+        canvas.oncontextmenu = (e) => {
             e.preventDefault();
             const r = canvas.getBoundingClientRect();
-            let me = (mySide === 'left') ? p1 : p2;
-            if(me.alive) { 
-                me.tx = e.clientX - r.left; me.ty = e.clientY - r.top; 
-                // Ограничение по реке
-                if(mySide === 'left' && me.tx > 550) me.tx = 550;
-                if(mySide === 'right' && me.tx < 650) me.tx = 650;
-            }
+            if(p1.alive) { p1.tx = e.clientX - r.left; p1.ty = e.clientY - r.top; if(p1.tx > 550) p1.tx = 550; }
         };
 
-        canvas.onmousemove = e => {
+        canvas.onmousemove = (e) => {
             const r = canvas.getBoundingClientRect();
             mouseX = e.clientX - r.left; mouseY = e.clientY - r.top;
         };
 
-        window.onkeydown = e => {
-            if(e.code === 'KeyQ' && gameActive && !pCD && !hook.active) {
-                let me = (mySide === 'left') ? p1 : p2;
-                if(!me.alive) return;
-                hook = { active: true, owner: me, x: me.x, y: me.y, sx: me.x, sy: me.y };
-                const ang = Math.atan2(mouseY - me.y, mouseX - me.x);
-                hook.vx = Math.cos(ang) * 15; hook.vy = Math.sin(ang) * 15;
+        window.onkeydown = (e) => {
+            if(e.code === 'KeyQ' && gameActive && !pCD && !hook.active && p1.alive) {
+                hook = { active: true, owner: p1, x: p1.x, y: p1.y, sx: p1.x, sy: p1.y };
+                const ang = Math.atan2(mouseY - p1.y, mouseX - p1.x);
+                hook.vx = Math.cos(ang) * 14; hook.vy = Math.sin(ang) * 14;
                 startCD();
             }
         };
 
         function startCD() {
             pCD = true; const f = document.getElementById('cdFill');
-            f.classList.replace('hidden', 'flex');
+            f.classList.remove('hidden'); f.classList.add('flex');
             let t = 7; f.innerText = t;
-            const i = setInterval(() => { t--; f.innerText = t; if(t<=0){ clearInterval(i); pCD=false; f.classList.replace('flex','hidden'); } }, 1000);
+            const i = setInterval(() => { t--; f.innerText = t; if(t <= 0) { clearInterval(i); pCD = false; f.classList.add('hidden'); } }, 1000);
         }
 
         function gameLoop() {
             if(!gameActive) return;
             ctx.fillStyle = "#121a12"; ctx.fillRect(0,0,1200,600);
-            ctx.fillStyle = "#050505"; ctx.fillRect(560,0,80,600); // Река
-
-            // Движение себя
-            let me = (mySide === 'left') ? p1 : p2;
-            let target = (mySide === 'left') ? p2 : p1;
+            ctx.fillStyle = "#050505"; ctx.fillRect(560, 0, 80, 600); // River
 
             [p1, p2].forEach(u => {
-                if(!u.alive) { if(Date.now() > u.respawn) { u.alive=true; u.x=(u===p1?100:1100); u.y=300; u.tx=u.x; u.ty=u.y; } return; }
-                let dx = u.tx - u.x, dy = u.ty - u.y, d = Math.sqrt(dx*dx+dy*dy);
-                if(d > 5) { u.x += (dx/d)*5; u.y += (dy/d)*5; }
+                if(!u.alive) { if(Date.now() > u.respawn) { u.alive = true; u.x = (u === p1) ? 100 : 1100; u.y = 300; u.tx = u.x; u.ty = u.y; } return; }
+                let dx = u.tx - u.x, dy = u.ty - u.y, d = Math.sqrt(dx*dx + dy*dy);
+                if(d > 5) { u.x += (dx/d) * 4.5; u.y += (dy/d) * 4.5; }
             });
 
-            // Бот логика
-            if(gameMode === 'bot' && p2.alive) {
-                if(Math.random() < 0.02) { p2.tx = 700 + Math.random()*400; p2.ty = Math.random()*500; }
-            }
+            // Простая логика бота
+            if(p2.alive && Math.random() < 0.02) { p2.tx = 700 + Math.random()*450; p2.ty = Math.random()*550; }
 
-            // Отрисовка
-            [p1, p2].forEach(p => {
-                if(!p.alive) return;
-                ctx.drawImage(pImg, p.x-40, p.y-40, 80, 80);
-            });
+            [p1, p2].forEach(p => { if(p.alive) ctx.drawImage(pImg, p.x-40, p.y-40, 80, 80); });
 
-            // Хук
             if(hook.active) {
-                ctx.strokeStyle = "#555"; ctx.lineWidth = 5;
+                ctx.strokeStyle = "#555"; ctx.lineWidth = 4;
                 ctx.beginPath(); ctx.moveTo(hook.owner.x, hook.owner.y); ctx.lineTo(hook.x, hook.y); ctx.stroke();
                 ctx.fillStyle = "#fff"; ctx.fillRect(hook.x-8, hook.y-8, 16, 16);
                 hook.x += hook.vx; hook.y += hook.vy;
-
-                let enemy = (hook.owner === p1) ? p2 : p1;
-                let d = Math.sqrt((hook.x - enemy.x)**2 + (hook.y - enemy.y)**2);
-                if(d < 40 && enemy.alive) {
-                    enemy.alive = false; enemy.respawn = Date.now() + 3000;
-                    if(enemy === p2) score.p1++; else score.p2++;
-                    document.getElementById('gScore').innerText = `${score.p1} - ${score.p2}`;
+                let target = p2;
+                let d = Math.sqrt((hook.x - target.x)**2 + (hook.y - target.y)**2);
+                if(d < 45 && target.alive) {
+                    target.alive = false; target.respawn = Date.now() + 3000;
+                    score.p1++; document.getElementById('gScore').innerText = `${score.p1} - ${score.p2}`;
                     hook.active = false;
                 }
-                if(Math.sqrt((hook.x-hook.sx)**2+(hook.y-hook.sy)**2) > 900) hook.active = false;
+                if(Math.sqrt((hook.x-hook.sx)**2 + (hook.y-hook.sy)**2) > 900) hook.active = false;
             }
-
-            // Синхронизация (если PvP)
-            if(gameMode === 'pvp') {
-                gameChannel.send({ type: 'broadcast', event: 'sync', payload: { x: me.x, y: me.y, hook: hook } });
-            }
-
             requestAnimationFrame(gameLoop);
         }
 
-        function exitGame() { gameActive = false; showScreen('menuScreen'); if(gameChannel) gameChannel.unsubscribe(); }
+        function exitGame() { gameActive = false; showScreen('menuScreen'); }
     </script>
 </body>
 </html>

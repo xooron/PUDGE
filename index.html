@@ -3,92 +3,85 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pudge Wars Elite | Dota Client Style</title>
+    <title>Pudge Wars Elite | Global Client</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Oswald:wght@500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&family=Oswald:wght@500;700&display=swap" rel="stylesheet">
     <style>
-        body { background-color: #000; color: #fff; font-family: 'Inter', sans-serif; overflow: hidden; margin: 0; user-select: none; }
-
-        /* Задний фон с размытием */
-        .bg-video-wrap {
+        body { background: #000; color: #fff; font-family: 'Inter', sans-serif; overflow: hidden; margin: 0; }
+        
+        /* Задний фон */
+        .bg-wrap {
             position: fixed; inset: 0; z-index: -1;
             background: url('https://cdnb.artstation.com/p/assets/covers/images/045/203/219/large/anton-chistiakov-anton-chistiakov-2022-01-14-14-01-15.jpg?1642158545') no-repeat center;
-            background-size: cover; filter: blur(6px) brightness(0.5); transform: scale(1.1);
+            background-size: cover; filter: blur(8px) brightness(0.4); transform: scale(1.1);
         }
 
-        /* Стиль Осколков (Dota Plus) */
-        .shards-container {
-            display: flex; align-items: center; gap: 10px;
-            padding: 8px 20px; border-radius: 4px;
-            background: rgba(0, 0, 0, 0.6); border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-        .shard-icon {
-            width: 20px; height: 28px;
-            background: linear-gradient(180deg, #ed9e4d 0%, #7c3a0d 100%);
-            clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
-        }
-        .shard-value { font-family: 'Oswald', sans-serif; font-size: 24px; color: #f1d37e; line-height: 1; }
-        .shard-label { font-size: 11px; color: #a3a3a3; text-transform: uppercase; font-weight: 800; letter-spacing: 1px; }
+        /* Glassmorphism */
+        .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.1); }
+        .glass-dark { background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.05); }
 
-        /* Кнопка ИГРАТЬ (Bottom Right) */
-        .play-anchor { position: fixed; bottom: 50px; right: 50px; z-index: 100; }
-        .btn-dota-play {
+        /* Кнопка Играть */
+        .btn-play-fixed {
             background: linear-gradient(to right, #40b044, #2d8131);
-            padding: 18px 100px; border-radius: 4px;
-            font-family: 'Oswald', sans-serif; font-size: 38px; font-weight: 700;
-            text-transform: uppercase; font-style: italic;
-            border: 1px solid rgba(255,255,255,0.3);
-            box-shadow: 0 0 30px rgba(64, 176, 68, 0.4); transition: 0.2s; cursor: pointer;
+            border: 1px solid rgba(255,255,255,0.2);
+            box-shadow: 0 0 30px rgba(64, 176, 68, 0.3);
+            transition: 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
-        .btn-dota-play:hover { filter: brightness(1.2); transform: scale(1.05); }
+        .btn-play-fixed:hover { transform: scale(1.05) translateY(-5px); box-shadow: 0 10px 40px rgba(64, 176, 68, 0.5); }
 
-        .glass-panel { background: rgba(15, 15, 15, 0.8); backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.1); }
-        .screen { display: none; height: 100vh; width: 100vw; position: relative; }
-        .active-screen { display: block; animation: fadeIn 0.5s ease; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        /* Анимации */
+        .screen { display: none; height: 100vh; animation: fadeIn 0.6s ease; }
+        .active-screen { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: scale(1.02); } to { opacity: 1; transform: scale(1); } }
 
-        /* Игровые всплывашки */
-        .status-popup {
-            position: absolute; pointer-events: none; animation: floatUp 1.2s ease-out forwards;
-            font-size: 4rem; font-weight: 900; font-style: italic; z-index: 1000;
-        }
-        @keyframes floatUp {
-            0% { transform: translateY(0) scale(0.5); opacity: 0; }
-            20% { transform: translateY(-30px) scale(1.1); opacity: 1; }
-            100% { transform: translateY(-120px) scale(1); opacity: 0; }
-        }
+        /* Кастомный скролл */
+        ::-webkit-scrollbar { width: 3px; }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 10px; }
 
         #splash {
             position: fixed; inset: 0; z-index: 9999; background: #000;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
         }
 
-        canvas { background: #0a0c0a; display: block; border: 2px solid #1a201a; cursor: crosshair; }
+        /* Стили Shards (Dota Plus) */
+        .shard-val { color: #f1d37e; text-shadow: 0 0 10px rgba(241, 211, 126, 0.5); font-family: 'Oswald', sans-serif; }
     </style>
 </head>
 <body>
 
-    <div class="bg-video-wrap"></div>
+    <div class="bg-wrap"></div>
 
     <!-- ЗАГРУЗКА -->
     <div id="splash">
-        <img src="https://images.genius.com/e05ad2b3029a4feea47ac108100b6eb3.1000x1000x1.png" class="w-32 mb-8 animate-pulse">
+        <img src="https://images.genius.com/e05ad2b3029a4feea47ac108100b6eb3.1000x1000x1.png" class="w-32 mb-8 animate-pulse rounded-full border-4 border-red-600">
         <div class="w-64 h-1 bg-white/10 rounded-full overflow-hidden">
             <div id="loader-progress" class="w-0 h-full bg-red-600 shadow-[0_0_15px_red] transition-all duration-[3000ms] ease-linear"></div>
         </div>
-        <div class="mt-4 text-[10px] uppercase tracking-[5px] opacity-50">DOTA 2 PUDGE WARS</div>
+        <div class="mt-4 text-[10px] uppercase tracking-[5px] opacity-50">Connecting to Pudge Arena</div>
     </div>
 
     <!-- АВТОРИЗАЦИЯ -->
     <div id="authScreen" class="screen">
         <div class="flex items-center justify-center h-full">
-            <div class="glass-panel p-10 rounded-3xl w-[400px] text-center shadow-2xl border-t-4 border-red-600">
-                <h1 class="text-4xl font-black mb-10 italic tracking-tighter">PUDGE 1x1</h1>
-                <div class="space-y-4">
-                    <input id="logUser" type="text" placeholder="ЛОГИН" class="w-full bg-black/60 border border-white/10 p-4 rounded-xl outline-none focus:border-red-600 transition">
-                    <input id="logPass" type="password" placeholder="ПАРОЛЬ" class="w-full bg-black/60 border border-white/10 p-4 rounded-xl mb-6 outline-none focus:border-red-600 transition">
-                    <button onclick="handleLogin()" class="w-full bg-red-600 py-4 rounded-xl font-bold uppercase hover:brightness-110 shadow-lg">ВОЙТИ / СОЗДАТЬ</button>
+            <div class="glass p-12 rounded-[40px] w-[450px] shadow-2xl border-t-2 border-red-600">
+                <h1 id="authTitle" class="text-4xl font-black mb-10 italic tracking-tighter text-center">PUDGE 1x1</h1>
+                
+                <!-- ВХОД -->
+                <div id="loginForm" class="space-y-4">
+                    <input id="logUser" type="text" placeholder="ЛОГИН" class="w-full bg-black/40 border border-white/10 p-4 rounded-2xl outline-none focus:border-red-600 transition">
+                    <input id="logPass" type="password" placeholder="ПАРОЛЬ" class="w-full bg-black/40 border border-white/10 p-4 rounded-2xl outline-none focus:border-red-600 transition">
+                    <button onclick="handleLogin()" class="w-full bg-red-600 py-4 rounded-2xl font-bold uppercase hover:brightness-110">ВОЙТИ</button>
+                    <p class="text-center text-xs opacity-50">Нет аккаунта? <span onclick="toggleAuth(true)" class="text-red-500 cursor-pointer underline">Создать</span></p>
+                </div>
+
+                <!-- РЕГИСТРАЦИЯ -->
+                <div id="regForm" class="space-y-4 hidden">
+                    <input id="regUser" type="text" placeholder="ЛОГИН" class="w-full bg-black/40 border border-white/10 p-4 rounded-2xl outline-none focus:border-green-600 transition">
+                    <input id="regPass" type="password" placeholder="ПАРОЛЬ" class="w-full bg-black/40 border border-white/10 p-4 rounded-2xl outline-none focus:border-green-600 transition">
+                    <input id="regPassConfirm" type="password" placeholder="ПОВТОРИТЕ ПАРОЛЬ" class="w-full bg-black/40 border border-white/10 p-4 rounded-2xl outline-none focus:border-green-600 transition">
+                    <button onclick="handleRegister()" class="w-full bg-green-600 py-4 rounded-2xl font-bold uppercase hover:brightness-110">ЗАРЕГИСТРИРОВАТЬСЯ</button>
+                    <p class="text-center text-xs opacity-50">Уже есть аккаунт? <span onclick="toggleAuth(false)" class="text-green-500 cursor-pointer underline">Войти</span></p>
                 </div>
             </div>
         </div>
@@ -96,112 +89,100 @@
 
     <!-- ГЛАВНОЕ МЕНЮ -->
     <div id="menuScreen" class="screen">
-        <!-- ЛЕВАЯ ПАНЕЛЬ -->
-        <div class="absolute top-10 left-10 space-y-6">
-            <div onclick="toggleModal('profileModal')" class="glass-panel p-4 rounded-2xl flex items-center gap-4 cursor-pointer hover:bg-white/5 transition">
+        <!-- Левая панель: Профиль и Друзья -->
+        <div class="absolute top-10 left-10 bottom-10 flex flex-col gap-6">
+            <!-- Профиль -->
+            <div onclick="toggleModal('profileModal')" class="glass p-4 rounded-3xl flex items-center gap-4 cursor-pointer hover:bg-white/5 transition">
                 <div class="relative">
-                    <img src="https://images.genius.com/e05ad2b3029a4feea47ac108100b6eb3.1000x1000x1.png" class="w-16 h-16 rounded-xl border-2 border-red-600">
-                    <div id="rankIconMain" class="absolute -bottom-2 -right-2 bg-black border border-white/20 w-8 h-8 rounded-lg flex items-center justify-center text-sm">🔒</div>
+                    <img src="https://images.genius.com/e05ad2b3029a4feea47ac108100b6eb3.1000x1000x1.png" class="w-16 h-16 rounded-2xl border-2 border-red-600 shadow-lg">
+                    <div id="rankIconMain" class="absolute -bottom-2 -right-2 bg-black border border-white/20 w-8 h-8 rounded-lg flex items-center justify-center text-xs">🔒</div>
                 </div>
                 <div>
                     <div id="userNickMain" class="text-2xl font-black tracking-tight">Pudge</div>
-                    <div class="text-[10px] text-green-500 font-black tracking-widest uppercase">В сети</div>
+                    <div class="text-[10px] text-green-500 font-bold tracking-widest uppercase">В сети</div>
                 </div>
             </div>
 
-            <div class="glass-panel w-64 p-5 rounded-3xl h-[400px] flex flex-col">
+            <!-- Друзья -->
+            <div class="glass w-72 rounded-[32px] flex-grow flex flex-col p-6 overflow-hidden">
                 <div class="flex justify-between items-center mb-4 border-b border-white/5 pb-2">
                     <span class="text-[10px] font-black opacity-40 uppercase tracking-widest">Друзья</span>
-                    <button onclick="addFriendPrompt()" class="text-green-500 text-xl hover:scale-110 transition">+</button>
+                    <button onclick="addFriendPrompt()" class="text-green-500 font-bold hover:scale-125 transition">+</button>
                 </div>
-                <div id="friendsContainer" class="flex-grow overflow-y-auto space-y-2"></div>
+                <div id="friendsList" class="flex-grow overflow-y-auto space-y-2 mb-4 pr-2"></div>
+                
+                <!-- Заявки -->
+                <div class="border-t border-white/10 pt-4">
+                    <span class="text-[10px] font-black opacity-40 uppercase tracking-widest">Заявки</span>
+                    <div id="requestsList" class="mt-2 space-y-2 max-h-32 overflow-y-auto">
+                        <p class="text-[10px] opacity-20 italic">Нет заявок</p>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <!-- ПРАВАЯ ВЕРХНЯЯ ПАНЕЛЬ -->
+        <!-- Верхняя правая панель -->
         <div class="absolute top-10 right-10 flex items-center gap-6">
-            <div class="shards-container cursor-pointer hover:brightness-110 transition" onclick="toggleModal('shopModal')">
-                <div class="shard-icon"></div>
+            <div onclick="toggleModal('shopModal')" class="glass-dark px-6 py-2 rounded-xl flex items-center gap-3 cursor-pointer hover:bg-black/80 transition border border-white/10">
+                <div class="w-5 h-7 bg-gradient-to-br from-orange-400 to-orange-800" style="clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);"></div>
                 <div>
-                    <div class="shard-value" id="coinsMain">18,068</div>
-                    <div class="shard-label">Осколков</div>
+                    <div class="shard-val text-2xl leading-none" id="coinsMain">18,068</div>
+                    <div class="text-[9px] uppercase font-black opacity-40">Осколков</div>
                 </div>
             </div>
-            <button onclick="location.reload()" class="w-10 h-10 rounded-full bg-red-600 flex items-center justify-center hover:rotate-90 transition">✕</button>
+            <button onclick="toggleModal('exitModal')" class="w-12 h-12 rounded-full bg-red-600/20 border border-red-600/50 flex items-center justify-center hover:bg-red-600 transition">✕</button>
         </div>
 
-        <!-- КНОПКА ИГРАТЬ -->
-        <div class="play-anchor">
-            <button onclick="toggleModal('playModal')" class="btn-dota-play">ИГРАТЬ</button>
+        <!-- Кнопка ИГРАТЬ -->
+        <div class="fixed bottom-10 right-10">
+            <button onclick="toggleModal('playModal')" class="btn-play-fixed px-20 py-6 rounded-xl text-4xl font-black italic tracking-tighter uppercase">Играть</button>
         </div>
     </div>
 
     <!-- ИГРОВОЙ ЭКРАН -->
     <div id="gameScreen" class="screen bg-black">
-        <div class="flex justify-between items-center p-6 bg-zinc-900/50 border-b border-red-600">
+        <div class="flex justify-between items-center p-6 bg-zinc-900 border-b border-red-600">
             <div class="text-blue-400 font-bold text-2xl uppercase" id="gNickP">PLAYER</div>
-            <div class="text-5xl font-black italic" id="gScore">0 - 0</div>
+            <div class="text-4xl font-black italic" id="gScore">0 - 0</div>
             <div class="text-red-600 font-bold text-2xl uppercase">DIRE BOT</div>
         </div>
         <div id="gameContainer" class="flex items-center justify-center h-[calc(100vh-100px)]">
             <canvas id="gameCanvas" width="1200" height="600"></canvas>
         </div>
-        <!-- Худ кнопки -->
-        <div class="fixed bottom-10 left-1/2 -translate-x-1/2 glass-panel p-4 flex gap-6 items-center">
-            <div id="hookBtn" class="w-20 h-20 border-2 border-zinc-600 rounded-xl relative" style="background-image: url('https://liquipedia.net/commons/images/9/91/Pudge_Meat_Hook_%28Grand_Abscession%29_abilityicon_dota2_gameasset.png'); background-size: cover;">
-                <div id="cdFill" class="absolute inset-0 bg-black/70 hidden items-center justify-center text-3xl font-bold">7</div>
-                <div class="absolute -top-2 -left-2 bg-black px-2 border border-zinc-600 text-xs">Q</div>
+        <div class="fixed bottom-10 left-1/2 -translate-x-1/2 glass p-4 flex gap-6 items-center rounded-2xl">
+            <div id="hookBtn" class="w-20 h-20 border-2 border-white/20 rounded-xl relative overflow-hidden" style="background-image: url('https://liquipedia.net/commons/images/9/91/Pudge_Meat_Hook_%28Grand_Abscession%29_abilityicon_dota2_gameasset.png'); background-size: cover;">
+                <div id="cdFill" class="absolute inset-0 bg-black/80 hidden items-center justify-center text-3xl font-bold">7</div>
+                <div class="absolute -top-1 -left-1 bg-black px-2 text-[10px] border border-white/10 font-bold">Q</div>
             </div>
-            <div class="text-xs opacity-50 font-bold uppercase">ПКМ: Ходить<br>Q: Хук по курсору</div>
-            <button onclick="exitGame()" class="text-red-500 font-bold uppercase text-xs underline">Покинуть</button>
+            <div class="text-[10px] opacity-40 font-bold uppercase">ПКМ: Ходить<br>Q: Хук</div>
+            <button onclick="exitGame()" class="text-red-500 font-black text-xs underline">ПОКИНУТЬ</button>
         </div>
     </div>
 
     <!-- МОДАЛКИ -->
     <div id="playModal" class="fixed inset-0 bg-black/90 z-[1000] hidden items-center justify-center">
-        <div class="glass-panel p-10 rounded-[40px] flex flex-col gap-4 w-80">
-            <h2 class="text-center font-black text-xl mb-4 tracking-widest uppercase">Режим игры</h2>
-            <button onclick="initMatch('bot')" class="bg-white/5 border border-white/10 py-5 rounded-2xl font-bold hover:bg-white/10 transition flex justify-between px-6">
-                ПРОТИВ БОТА <span>🤖</span>
-            </button>
-            <button onclick="alert('Выберите друга')" class="bg-indigo-600 py-5 rounded-2xl font-bold hover:brightness-110 transition flex justify-between px-6">
-                ДУЭЛЬ 1х1 <span>⚔️</span>
-            </button>
-            <button onclick="toggleModal('playModal')" class="mt-4 opacity-50 text-sm">Назад</button>
+        <div class="glass p-10 rounded-[40px] flex flex-col gap-4 w-96 text-center">
+            <h2 class="font-black text-2xl mb-4 tracking-widest uppercase italic">Найти игру</h2>
+            <button onclick="initMatch()" class="bg-white/5 border border-white/10 py-6 rounded-2xl font-bold hover:bg-white/10 transition flex justify-between px-8">ПРОТИВ БОТА <span>🤖</span></button>
+            <button onclick="alert('Выберите друга в списке')" class="bg-indigo-600 py-6 rounded-2xl font-bold hover:brightness-110 transition flex justify-between px-8">1х1 С ДРУГОМ <span>⚔️</span></button>
+            <button onclick="toggleModal('playModal')" class="mt-4 text-xs opacity-40 uppercase font-bold">Назад</button>
         </div>
     </div>
 
-    <div id="profileModal" class="fixed inset-0 bg-black/95 z-[1000] hidden items-center justify-center">
-        <div class="glass-panel p-10 rounded-[40px] w-[500px] relative text-center">
-            <button onclick="toggleModal('profileModal')" class="absolute top-6 right-6 text-2xl opacity-30">✕</button>
-            <img src="https://images.genius.com/e05ad2b3029a4feea47ac108100b6eb3.1000x1000x1.png" class="w-24 h-24 rounded-3xl border-2 border-red-600 mx-auto mb-4 shadow-2xl">
-            <h2 id="profNick" class="text-3xl font-black">Nick</h2>
-            <p id="profId" class="text-indigo-500 font-mono text-xs mb-8">ID: 000000</p>
-            <div class="grid grid-cols-2 gap-4">
-                <div class="bg-white/5 p-6 rounded-2xl border border-white/5">
-                    <div class="text-[10px] uppercase opacity-40 font-bold mb-1">MMR Rating</div>
-                    <div id="profMMR" class="text-3xl font-black text-indigo-400">0</div>
-                </div>
-                <div class="bg-white/5 p-6 rounded-2xl border border-white/5">
-                    <div class="text-[10px] uppercase opacity-40 font-bold mb-1">Матчей</div>
-                    <div id="profMatches" class="text-3xl font-black text-white">0</div>
-                </div>
+    <div id="exitModal" class="fixed inset-0 bg-black/95 z-[1000] hidden items-center justify-center">
+        <div class="glass p-10 rounded-3xl text-center w-80">
+            <h2 class="text-xl font-bold mb-6">Выйти из игры?</h2>
+            <div class="flex gap-4">
+                <button onclick="location.reload()" class="bg-red-600 flex-grow py-3 rounded-xl font-bold">ДА</button>
+                <button onclick="toggleModal('exitModal')" class="bg-white/10 flex-grow py-3 rounded-xl font-bold">НЕТ</button>
             </div>
         </div>
     </div>
 
-    <div id="shopModal" class="fixed inset-0 bg-black/95 z-[1000] hidden items-center justify-center">
-        <div class="glass-panel p-10 rounded-[40px] w-96 text-center">
-            <h2 class="text-2xl font-black text-yellow-500 mb-6">МАГАЗИН</h2>
-            <p class="opacity-30 italic">Предметов пока нет</p>
-            <button onclick="toggleModal('shopModal')" class="mt-8 bg-white/10 px-6 py-2 rounded-lg">Закрыть</button>
-        </div>
-    </div>
-
     <script>
-        // --- КОНФИГУРАЦИЯ SUPABASE ---
+        // ИНИЦИАЛИЗАЦИЯ SUPABASE
         const SUPABASE_URL = 'https://kqlbnybifjoamckgkltv.supabase.co'; 
-        const SUPABASE_KEY = 'sb_publishable_ZTatmjCcOgN5o_EY1-SBUg_7t0bVIem'; // ЗАМЕНИ НА СВОЙ ANON KEY
+        const SUPABASE_KEY = 'sb_publishable_ZTatmjCcOgN5o_EY1-SBUg_7t0bVIem'; 
         const pudgeDb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         let user = { id: "", nick: "", mmr: 0, coins: 18068, matches: 0, hooks: 0 };
@@ -222,29 +203,44 @@
             document.getElementById(id).classList.add('active-screen');
         }
 
+        function toggleAuth(isReg) {
+            document.getElementById('loginForm').classList.toggle('hidden', isReg);
+            document.getElementById('regForm').classList.toggle('hidden', !isReg);
+            document.getElementById('authTitle').innerText = isReg ? "РЕГИСТРАЦИЯ" : "PUDGE 1x1";
+        }
+
         function toggleModal(id) {
             const m = document.getElementById(id);
             m.classList.toggle('hidden');
             m.classList.toggle('flex');
-            if(id === 'profileModal') updateProfileUI();
         }
 
+        // --- АВТОРИЗАЦИЯ ---
         async function handleLogin() {
             const nick = document.getElementById('logUser').value.trim();
             const pass = document.getElementById('logPass').value.trim();
-            if(!nick || !pass) return alert("Введите данные");
+            if(!nick || !pass) return alert("Заполните поля!");
 
-            const { data, error } = await pudgeDb.from('pudge_profiles').select('*').eq('nick', nick).eq('password', pass).maybeSingle();
-            
+            const { data } = await pudgeDb.from('pudge_profiles').select('*').eq('nick', nick).eq('password', pass).maybeSingle();
             if(data) {
                 user = data;
                 enterMenu();
-            } else {
-                const id = Math.floor(100000 + Math.random()*899999).toString();
-                const { error: regErr } = await pudgeDb.from('pudge_profiles').insert([{ id, nick, password: pass, mmr:0, coins:18068, matches:0, hooks:0 }]);
-                if(!regErr) { alert("Аккаунт создан!"); handleLogin(); }
-                else alert("Ошибка: Возможно ник занят.");
-            }
+            } else alert("Неверный логин или пароль!");
+        }
+
+        async function handleRegister() {
+            const nick = document.getElementById('regUser').value.trim();
+            const pass = document.getElementById('regPass').value.trim();
+            const passC = document.getElementById('regPassConfirm').value.trim();
+
+            if(!nick || !pass) return alert("Заполните поля!");
+            if(pass !== passC) return alert("Пароли не совпадают!");
+
+            const id = Math.floor(100000 + Math.random()*899999).toString();
+            const { error } = await pudgeDb.from('pudge_profiles').insert([{ id, nick, password: pass, mmr:0, coins:18068, matches:0, hooks:0 }]);
+            
+            if(!error) { alert("Успех! Теперь войдите."); toggleAuth(false); }
+            else alert("Ник занят или ошибка БД.");
         }
 
         function enterMenu() {
@@ -252,13 +248,41 @@
             document.getElementById('userNickMain').innerText = user.nick;
             document.getElementById('coinsMain').innerText = user.coins.toLocaleString();
             document.getElementById('rankIconMain').innerText = user.matches < 10 ? "🔒" : "🏆";
+            loadFriends();
+            listenToRequests();
         }
 
-        function updateProfileUI() {
-            document.getElementById('profNick').innerText = user.nick;
-            document.getElementById('profId').innerText = "ID: " + user.id;
-            document.getElementById('profMMR').innerText = user.mmr;
-            document.getElementById('profMatches').innerText = user.matches;
+        // --- ДРУЗЬЯ И ЗАЯВКИ ---
+        async function loadFriends() {
+            const list = document.getElementById('friendsList');
+            list.innerHTML = `<p class="text-[10px] opacity-20 italic">Нет друзей</p>`;
+        }
+
+        async function addFriendPrompt() {
+            const rid = prompt("Введите ID игрока:");
+            if(rid && rid !== user.id) {
+                await pudgeDb.from('pudge_requests').insert([{ from_id: user.id, to_id: rid, from_nick: user.nick }]);
+                alert("Заявка отправлена!");
+            }
+        }
+
+        function listenToRequests() {
+            pudgeDb.channel('requests').on('postgres_changes', { event:'INSERT', schema:'public', table:'pudge_requests', filter:`to_id=eq.${user.id}`}, payload => {
+                updateRequestsUI(payload.new);
+            }).subscribe();
+        }
+
+        function updateRequestsUI(req) {
+            const list = document.getElementById('requestsList');
+            list.innerHTML = `
+                <div class="glass p-2 rounded-xl flex justify-between items-center animate-bounce">
+                    <span class="text-xs font-bold">${req.from_nick}</span>
+                    <div class="flex gap-1">
+                        <button onclick="alert('Принято')" class="bg-green-600 p-1 rounded text-[8px]">✓</button>
+                        <button class="bg-red-600 p-1 rounded text-[8px]">✕</button>
+                    </div>
+                </div>
+            `;
         }
 
         // --- ИГРОВОЙ ДВИЖОК ---
@@ -266,34 +290,24 @@
         const ctx = canvas.getContext('2d');
         const pImg = new Image(); pImg.src = "https://images.genius.com/e05ad2b3029a4feea47ac108100b6eb3.1000x1000x1.png";
 
-        let gameActive = false, pCD = false, bCD = false;
-        let player, enemy, hook = { active: false, x:0, y:0, vx:0, vy:0, owner:null };
-        let score = { p:0, e:0 };
-        let mouseX = 0, mouseY = 0;
+        let gameActive = false, pCD = false, hook = { active: false };
+        let player, enemy, score = { p:0, e:0 }, mouseX = 0, mouseY = 0;
 
-        function initMatch(mode) {
+        function initMatch() {
             toggleModal('playModal');
             showScreen('gameScreen');
-            document.getElementById('gNickP').innerText = user.nick;
             player = { x: 100, y: 300, tx: 100, ty: 300, alive: true, respawn: 0 };
             enemy = { x: 1100, y: 300, tx: 1100, ty: 300, alive: true, respawn: 0 };
-            score = { p:0, e:0 };
-            gameActive = true;
-            updateScoreUI();
-            requestAnimationFrame(gameLoop);
+            score = { p:0, e:0 }; gameActive = true;
+            updateScoreUI(); requestAnimationFrame(gameLoop);
         }
 
-        function updateScoreUI() {
-            document.getElementById('gScore').innerText = `${score.p} - ${score.e}`;
-        }
+        function updateScoreUI() { document.getElementById('gScore').innerText = `${score.p} - ${score.e}`; }
 
         canvas.addEventListener('contextmenu', e => {
             e.preventDefault();
             const r = canvas.getBoundingClientRect();
-            if(player.alive) {
-                player.tx = e.clientX - r.left; player.ty = e.clientY - r.top;
-                if(player.tx > 550) player.tx = 550;
-            }
+            if(player.alive) { player.tx = e.clientX - r.left; player.ty = e.clientY - r.top; if(player.tx > 550) player.tx = 550; }
         });
 
         canvas.addEventListener('mousemove', e => {
@@ -302,27 +316,19 @@
         });
 
         window.onkeydown = e => {
-            if(e.code === 'KeyQ' && gameActive && !pCD && !hook.active && player.alive) fireHook(player, mouseX, mouseY);
+            if(e.code === 'KeyQ' && gameActive && !pCD && !hook.active && player.alive) {
+                hook = { active: true, owner: player, x: player.x, y: player.y, sx: player.x, sy: player.y };
+                const ang = Math.atan2(mouseY - player.y, mouseX - player.x);
+                hook.vx = Math.cos(ang) * 14; hook.vy = Math.sin(ang) * 14;
+                startCD();
+            }
         };
 
-        function fireHook(owner, tx, ty) {
-            hook.active = true; hook.owner = owner;
-            hook.x = owner.x; hook.y = owner.y;
-            hook.sx = owner.x; hook.sy = owner.y;
-            const ang = Math.atan2(ty - owner.y, tx - owner.x);
-            hook.vx = Math.cos(ang) * 14; hook.vy = Math.sin(ang) * 14;
-            
-            if(owner === player) {
-                user.hooks++;
-                pCD = true;
-                const fill = document.getElementById('cdFill');
-                fill.classList.remove('hidden'); fill.classList.add('flex');
-                let t = 7; fill.innerText = t;
-                const i = setInterval(() => {
-                    t--; fill.innerText = t;
-                    if(t <= 0) { clearInterval(i); pCD = false; fill.classList.add('hidden'); }
-                }, 1000);
-            } else { bCD = true; setTimeout(() => bCD = false, 7000); }
+        function startCD() {
+            pCD = true; const fill = document.getElementById('cdFill');
+            fill.classList.remove('hidden'); fill.classList.add('flex');
+            let t = 7; fill.innerText = t;
+            const i = setInterval(() => { t--; fill.innerText = t; if(t <= 0) { clearInterval(i); pCD = false; fill.classList.add('hidden'); } }, 1000);
         }
 
         function gameLoop() {
@@ -331,95 +337,47 @@
             ctx.fillStyle = "#050505"; ctx.fillRect(560, 0, 80, 600); // River
 
             [player, enemy].forEach(u => {
-                if(!u.alive) {
-                    if(Date.now() > u.respawn) { u.alive = true; u.x = (u === player) ? 100 : 1100; u.tx = u.x; u.y = 300; u.ty = 300; }
-                    return;
-                }
-                let dx = u.tx - u.x, dy = u.ty - u.y;
-                let d = Math.sqrt(dx*dx + dy*dy);
+                if(!u.alive) { if(Date.now() > u.respawn) { u.alive = true; u.x = (u === player) ? 100 : 1100; u.tx = u.x; u.y = 300; u.ty = 300; } return; }
+                let dx = u.tx - u.x, dy = u.ty - u.y, d = Math.sqrt(dx*dx + dy*dy);
                 if(d > 5) { u.x += (dx/d) * 4.5; u.y += (dy/d) * 4.5; }
                 u.x = Math.max(45, Math.min(u === player ? 540 : 1200, u.x));
                 if(u === enemy && u.x < 660) u.x = 660;
                 u.y = Math.max(45, Math.min(555, u.y));
             });
 
-            if(enemy.alive) {
-                if(Math.random() < 0.04) { enemy.tx = 700 + Math.random()*450; enemy.ty = Math.random()*550; }
-                if(!bCD && !hook.active && Math.random() < 0.01) fireHook(enemy, player.x, player.y);
-            }
+            if(enemy.alive && Math.random() < 0.02) { enemy.tx = 700 + Math.random()*450; enemy.ty = Math.random()*550; }
 
             [player, enemy].forEach(p => {
                 if(!p.alive) return;
-                ctx.save();
-                ctx.fillStyle = "rgba(0,0,0,0.4)";
+                ctx.save(); ctx.fillStyle = "rgba(0,0,0,0.4)";
                 ctx.beginPath(); ctx.ellipse(p.x, p.y + 35, 30, 10, 0, 0, Math.PI*2); ctx.fill();
-                ctx.drawImage(pImg, p.x-45, p.y-45, 90, 90);
-                ctx.restore();
+                ctx.drawImage(pImg, p.x-45, p.y-45, 90, 90); ctx.restore();
             });
 
             if(hook.active) {
-                renderDragonclaw();
+                renderChain();
                 hook.x += hook.vx; hook.y += hook.vy;
                 let target = (hook.owner === player) ? enemy : player;
-                let dist = Math.sqrt((hook.x - target.x)**2 + (hook.y - target.y)**2);
-                let range = Math.sqrt((hook.x - hook.sx)**2 + (hook.y - hook.sy)**2);
-                if(dist < 45 && target.alive) { hit(target); hook.active = false; }
-                if(range > 950 || hook.x < -50 || hook.x > 1250) hook.active = false;
+                let d = Math.sqrt((hook.x - target.x)**2 + (hook.y - target.y)**2);
+                if(d < 45 && target.alive) { 
+                    target.alive = false; target.respawn = Date.now() + 3000;
+                    if(target === enemy) score.p++; else score.e++;
+                    updateScoreUI(); hook.active = false;
+                }
+                if(Math.sqrt((hook.x-hook.sx)**2+(hook.y-hook.sy)**2) > 950) hook.active = false;
             }
-
-            if(score.p >= 7 || score.e >= 7) finishMatch();
+            if(score.p >= 7 || score.e >= 7) exitGame();
             else requestAnimationFrame(gameLoop);
         }
 
-        function renderDragonclaw() {
-            let dist = Math.sqrt((hook.x - hook.owner.x)**2 + (hook.y - hook.owner.y)**2);
-            let segments = Math.floor(dist / 22);
-            let ang = Math.atan2(hook.y - hook.owner.y, hook.x - hook.owner.x);
-            for(let i=0; i<=segments; i++) {
-                let sx = hook.owner.x + Math.cos(ang) * (i * 22);
-                let sy = hook.owner.y + Math.sin(ang) * (i * 22);
-                ctx.save(); ctx.translate(sx, sy); ctx.rotate(ang);
-                if(i === segments) {
-                    ctx.fillStyle = "#f1f5f9"; ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(-35, -20); ctx.lineTo(-20, 0); ctx.lineTo(-35, 20); ctx.closePath(); ctx.fill();
-                } else {
-                    ctx.fillStyle = "#cbd5e1"; ctx.fillRect(-11, -6, 22, 12);
-                }
-                ctx.restore();
-            }
+        function renderChain() {
+            ctx.strokeStyle = "#555"; ctx.lineWidth = 4;
+            ctx.beginPath(); ctx.moveTo(hook.owner.x, hook.owner.y);
+            ctx.lineTo(hook.x, hook.y); ctx.stroke();
+            ctx.fillStyle = "#fff"; ctx.fillRect(hook.x-10, hook.y-10, 20, 20);
         }
 
-        function hit(target) {
-            target.alive = false; target.respawn = Date.now() + 3000;
-            if(target === enemy) { score.p++; showPopup("ПОПАЛ!", "#4ade80", true); }
-            else { score.e++; showPopup("ПРОИГРАЛ!", "#f87171", false); }
-            updateScoreUI();
-        }
-
-        function showPopup(txt, col, isE) {
-            const div = document.createElement('div');
-            div.className = 'status-popup'; div.innerText = txt; div.style.color = col;
-            div.style.left = isE ? (enemy.x - 80) + 'px' : (player.x - 80) + 'px';
-            div.style.top = '300px';
-            document.getElementById('gameContainer').appendChild(div);
-            setTimeout(() => div.remove(), 1200);
-        }
-
-        async function finishMatch() {
-            gameActive = false;
-            user.matches++;
-            if(score.p >= 7) { user.mmr += 40; user.coins += 200; alert("ПОБЕДА!"); }
-            else { user.mmr -= 60; alert("ПОРАЖЕНИЕ..."); }
-            if(user.mmr < 0) user.mmr = 0;
-            await pudgeDb.from('pudge_profiles').upsert(user);
-            enterMenu();
-        }
-
-        function exitGame() { gameActive = false; enterMenu(); }
-
-        function addFriendPrompt() {
-            const id = prompt("Введите ID игрока:");
-            if(id) alert("Запрос отправлен игроку #" + id);
-        }
+        function exitGame() { gameActive = false; showScreen('menuScreen'); }
     </script>
 </body>
 </html>

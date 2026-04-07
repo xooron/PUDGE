@@ -99,7 +99,7 @@
         </header>
         <main class="flex-grow flex items-center justify-center">
             <button onclick="initGame()" class="pudge-btn px-20 py-10 text-5xl font-black italic rounded-lg shadow-2xl hover:scale-105 transition">ИГРАТЬ 1х1</button>
-        </main>
+        </header>
     </div>
 
     <!-- МОДАЛКА ПРОФИЛЯ -->
@@ -155,9 +155,10 @@
 
     <script>
         // --- КОНФИГУРАЦИЯ SUPABASE ---
+        // Переименовали переменную в pudgeDb, чтобы не было конфликта с глобальным объектом 'supabase'
         const SUPABASE_URL = 'https://kqlbnybifjoamckgkltv.supabase.co'; 
-        const SUPABASE_KEY = 'sb_secret__9cJdxqifMU7Chuwjz1PUw_YYf0o3_H'; // <--- ТВОЙ ANON KEY ИЗ НАСТРОЕК SUPABASE
-        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        const SUPABASE_KEY = 'sb_publishable_ZTatmjCcOgN5o_EY1-SBUg_7t0bVIem'; // <--- ЗАМЕНИ ЭТО НА СВОЙ ANON KEY
+        const pudgeDb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         let user = { 
             id: localStorage.getItem('pudge_id') || Math.floor(Math.random()*5000000+1000000).toString(),
@@ -183,7 +184,8 @@
 
             // Пытаемся загрузить данные
             try {
-                const { data, error } = await supabase.from('pudge_profiles').select('*').eq('id', user.id).single();
+                // Используем pudgeDb вместо supabase
+                const { data, error } = await pudgeDb.from('pudge_profiles').select('*').eq('id', user.id).maybeSingle();
                 if(data) {
                     user = data;
                     document.getElementById('regNick').value = user.nick;
@@ -199,7 +201,8 @@
 
         function showScreen(id) {
             document.querySelectorAll('.screen').forEach(s => s.classList.remove('active-screen'));
-            document.getElementById(id).classList.add('active-screen');
+            const target = document.getElementById(id);
+            if(target) target.classList.add('active-screen');
         }
 
         async function saveAndEnter() {
@@ -211,9 +214,9 @@
             updateUI();
             showScreen('menuScreen');
 
-            // Сохраняем в Supabase фоном
+            // Сохраняем в Supabase фоном через pudgeDb
             try {
-                await supabase.from('pudge_profiles').upsert({
+                await pudgeDb.from('pudge_profiles').upsert({
                     id: user.id, nick: user.nick, description: user.description,
                     mmr: user.mmr, coins: user.coins, matches: user.matches, hooks: user.hooks
                 });
@@ -420,7 +423,8 @@
             if(user.mmr < 0) user.mmr = 0;
             
             try {
-                await supabase.from('pudge_profiles').upsert({
+                // Используем pudgeDb для сохранения
+                await pudgeDb.from('pudge_profiles').upsert({
                     id: user.id, nick: user.nick, mmr: user.mmr,
                     coins: user.coins, matches: user.matches, hooks: user.hooks
                 });
